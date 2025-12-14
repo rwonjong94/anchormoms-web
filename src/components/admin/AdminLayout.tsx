@@ -21,7 +21,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (pathname.includes('/scores')) return 'scores';
     if (pathname.includes('/lectures')) return 'lectures';
     if (pathname.includes('/classes')) return 'classes';
-    if (pathname.includes('/explanations')) return 'explanations';
     if (pathname.includes('/counselings')) return 'counselings';
     if (pathname.includes('/columns')) return 'columns';
     if (pathname.includes('/stores')) return 'stores';
@@ -111,17 +110,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               }`}
             >
               <span className="mr-1">💬</span> 상담 관리
-            </Link>
-            <Link
-              href="/nimda/dashboard/explanations"
-              prefetch
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'explanations'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-muted hover:text-body hover:border-default'
-              }`}
-            >
-              <span className="mr-1">🎬</span> 설명 관리
             </Link>
           </nav>
           {/* 2줄: 강의/시험/칼럼/문제/자료/퀴즈 */}

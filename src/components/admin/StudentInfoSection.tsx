@@ -23,7 +23,7 @@ interface Student {
 
 interface StudentInfoSectionProps {
   student: Student;
-  currentPage?: 'counselings' | 'exams' | 'explanations' | 'arithmetic' | 'schedule' | 'roadmap' | 'scores';
+  currentPage?: 'counselings' | 'exams' | 'arithmetic' | 'schedule' | 'roadmap' | 'scores';
 }
 
 export default function StudentInfoSection({ student, currentPage }: StudentInfoSectionProps) {
@@ -79,16 +79,6 @@ export default function StudentInfoSection({ student, currentPage }: StudentInfo
       hoverColor: 'hover:bg-purple-100',
       borderColor: 'border-purple-200',
       textColor: 'text-purple-700'
-    },
-    {
-      key: 'explanations',
-      label: '설명 관리',
-      icon: '🎥',
-      path: `/nimda/dashboard/students/${student.id}/explanations`,
-      bgColor: 'bg-blue-50',
-      hoverColor: 'hover:bg-blue-100',
-      borderColor: 'border-blue-200',
-      textColor: 'text-blue-700'
     },
     {
       key: 'arithmetic',

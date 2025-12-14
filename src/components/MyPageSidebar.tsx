@@ -5,7 +5,6 @@ import React from 'react';
 
 export type MyPageSection =
   | '수업 일지'
-  | '학생 설명 영상'
   | '학부모 상담 기록'
   | '학생 시험 기록'
   | '학생 연산 기록'
@@ -17,7 +16,6 @@ interface MyPageSidebarProps {
 
 const sections: MyPageSection[] = [
   '수업 일지',
-  '학생 설명 영상',
   '학부모 상담 기록',
   '학생 시험 기록',
   '학생 연산 기록',
@@ -29,7 +27,6 @@ export default function MyPageSidebar({ active }: MyPageSidebarProps) {
 
   const handleClick = (section: MyPageSection) => {
     if (section === '수업 일지') router.push('/mypage/class-log');
-    else if (section === '학생 설명 영상') router.push('/mypage/explanations');
     else if (section === '학부모 상담 기록') router.push('/mypage/parent-counseling');
     else if (section === '학생 시험 기록') router.push('/mypage/student-exams');
     else if (section === '학생 연산 기록') router.push('/mypage/student-arithmetic');
