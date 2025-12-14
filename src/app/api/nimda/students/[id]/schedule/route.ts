@@ -9,7 +9,7 @@ async function verifyAdminAuth(request: NextRequest) {
   try {
     const token = authHeader.substring(7);
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
-    if (decoded.role !== 'admin') return null;
+    if (decoded.sub !== 'admin') return null;
     return decoded;
   } catch {
     return null;
