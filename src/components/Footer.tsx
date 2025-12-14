@@ -24,7 +24,6 @@ export default function Footer() {
             <h4 className="text-sm font-semibold text-white mb-4">서비스</h4>
             <ul className="space-y-2">
               <li><a href="/exam" className="text-sm text-gray-300 hover:text-white transition-colors">모의고사</a></li>
-              <li><a href="/coaching" className="text-sm text-gray-300 hover:text-white transition-colors">코칭</a></li>
               <li><a href="/column" className="text-sm text-gray-300 hover:text-white transition-colors">학습 칼럼</a></li>
               <li><a href="/settings" className="text-sm text-gray-300 hover:text-white transition-colors">설정</a></li>
             </ul>

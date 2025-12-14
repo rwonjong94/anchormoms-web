@@ -9,7 +9,6 @@ export type MyPageSection =
   | '학부모 상담 기록'
   | '학생 시험 기록'
   | '학생 연산 기록'
-  | '트로피 진열장'
   | '기본 정보 설정';
 
 interface MyPageSidebarProps {
@@ -22,7 +21,6 @@ const sections: MyPageSection[] = [
   '학부모 상담 기록',
   '학생 시험 기록',
   '학생 연산 기록',
-  '트로피 진열장',
   '기본 정보 설정',
 ];
 
@@ -35,8 +33,6 @@ export default function MyPageSidebar({ active }: MyPageSidebarProps) {
     else if (section === '학부모 상담 기록') router.push('/mypage/parent-counseling');
     else if (section === '학생 시험 기록') router.push('/mypage/student-exams');
     else if (section === '학생 연산 기록') router.push('/mypage/student-arithmetic');
-    // 구매 목록은 쇼핑으로 이동
-    else if (section === '트로피 진열장') router.push('/mypage/trophies');
     else if (section === '기본 정보 설정') router.push('/mypage/settings');
   };
 

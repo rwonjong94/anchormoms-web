@@ -13,9 +13,6 @@ export default function ExamSidebar() {
         <Link href="/explanation">
           <Button variant="secondary" size="sm" className="w-full justify-start">해설/답지</Button>
         </Link>
-        <Link href="/solution-videos">
-          <Button variant="secondary" size="sm" className="w-full justify-start">동영상 강의</Button>
-        </Link>
       </div>
     </Card>
   );

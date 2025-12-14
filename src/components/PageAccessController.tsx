@@ -24,11 +24,10 @@ export default function PageAccessController({ children }: PageAccessControllerP
     }
     
     const protectedPages = [
-      '/exam/waiting', 
+      '/exam/waiting',
       '/exam/take',
       '/exam',        // 시험 페이지
       '/lectures',    // 강의 페이지
-      '/coaching',    // 코칭 페이지  
       '/column',      // 칼럼 페이지
       '/explanation'  // 해설 페이지
     ];
