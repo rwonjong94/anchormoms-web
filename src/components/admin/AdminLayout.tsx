@@ -26,7 +26,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (pathname.includes('/stores')) return 'stores';
     if (pathname.includes('/students')) return 'students';
     if (pathname.includes('/problems')) return 'problems';
-    if (pathname.includes('/quiz')) return 'quiz';
     return 'students';
   };
 
