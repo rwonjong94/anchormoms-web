@@ -1,0 +1,16 @@
+.git
+.gitignore
+node_modules
+.next
+.turbo
+npm-debug.log*
+yarn-error.log*
+coverage
+*.local
+.env
+.env.*
+.DS_Store
+README.md
+CLAUDE.md
+tsconfig.tsbuildinfo
+
