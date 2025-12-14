@@ -139,15 +139,12 @@ function generatePDFContent(problems: any[], includeAnswers: boolean, type: stri
 
 // PDF 생성 API
 export async function POST(request: NextRequest) {
-  console.log('PDF 생성 API 호출됨');
   
   try {
     const body = await request.json();
     const { problems, includeAnswers, type } = body;
-    console.log('PDF 생성 요청:', { type, includeAnswers, problemsCount: problems?.length });
 
     if (!problems || !Array.isArray(problems) || problems.length === 0) {
-      console.log('문제 데이터 없음');
       return NextResponse.json(
         { error: '문제 데이터가 필요합니다.' },
         { status: 400 }
@@ -156,15 +153,12 @@ export async function POST(request: NextRequest) {
 
     // HTML 콘텐츠 생성
     const htmlContent = generatePDFContent(problems, includeAnswers, type);
-    console.log('HTML 콘텐츠 생성 완료:', htmlContent.length, 'characters');
 
     // 백엔드 API 호출하여 PDF 생성
     const backendUrl = 'http://backend:3001';
     const backendEndpoint = `${backendUrl}/api/admin/arithmetic/generate-pdf`;
-    console.log('백엔드 호출:', backendEndpoint);
     
     try {
-      console.log('백엔드 호출 시작...');
       const response = await fetch(backendEndpoint, {
         method: 'POST',
         headers: {
@@ -177,7 +171,6 @@ export async function POST(request: NextRequest) {
         }),
       });
 
-      console.log('백엔드 응답 상태:', response.status, response.statusText);
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -189,7 +182,6 @@ export async function POST(request: NextRequest) {
       }
 
       const pdfBuffer = await response.arrayBuffer();
-      console.log('PDF 버퍼 생성 완료:', pdfBuffer.byteLength, 'bytes');
       
       return new NextResponse(pdfBuffer, {
         headers: {

@@ -24,13 +24,11 @@ export async function GET(request: NextRequest) {
     });
 
     const targetUrl = `${backendUrl}/api/admin/students?${queryParams}`;
-    console.log('[nimda/students][GET] ->', targetUrl);
     const response = await fetch(targetUrl, {
       headers: {
         'Authorization': `Bearer ${request.headers.get('Authorization')?.substring(7)}`,
       },
     });
-    console.log('[nimda/students][GET] status =', response.status);
 
     if (!response.ok) {
       // 백엔드 응답을 그대로 전달하여 원인 파악 용이

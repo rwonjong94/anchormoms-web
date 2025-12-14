@@ -40,7 +40,6 @@ export default function LecturesPage() {
   const router = useRouter();
 
   useEffect(() => {
-    console.log('Lectures page useEffect - isAuthenticated:', isAuthenticated, 'user:', user, 'isLoading:', isLoading);
     
     // 로딩 중일 때는 아무것도 하지 않음
     if (isLoading) {
@@ -49,12 +48,10 @@ export default function LecturesPage() {
     
     // 로딩 완료 후 인증되지 않은 경우에만 리다이렉트
     if (!isAuthenticated) {
-      console.log('Not authenticated after loading, redirecting to login');
       router.push('/auth/login');
       return;
     }
     
-    console.log('Fetching categories and lectures...');
     fetchCategories();
     fetchLectures();
   }, [isAuthenticated, user, selectedCategory, router, isLoading]);
@@ -68,13 +65,10 @@ export default function LecturesPage() {
 
   const fetchCategories = async () => {
     try {
-      console.log('Fetching categories from', `${process.env.NEXT_PUBLIC_API_URL}/api/lectures/categories`);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/lectures/categories`);
-      console.log('Categories response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Categories data:', data);
         setCategories(data);
       } else {
         console.error('Categories fetch failed with status:', response.status);
@@ -94,18 +88,13 @@ export default function LecturesPage() {
         ? `${baseUrl}/api/lectures?categoryId=${selectedCategory}`
         : `${baseUrl}/api/lectures`;
       
-      console.log('Fetching lectures with URL:', url);
-      console.log('Selected category:', selectedCategory);
       
       const response = await fetch(url);
-      console.log('Lectures response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched lectures raw data:', data);
         // Only show published lectures for users
         const publishedLectures = data.filter((lecture: Lecture) => lecture.isPublished);
-        console.log('Published lectures:', publishedLectures);
         setLectures(publishedLectures);
       } else {
         console.error('Failed to fetch lectures, status:', response.status);

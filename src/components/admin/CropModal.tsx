@@ -112,7 +112,6 @@ export default function CropModal({
     // 드래그 업데이트로 표시하여 실제 드래그로 인한 변경임을 나타냄
     setIsDragUpdate(true);
     
-    console.log('범위 선택:', {
       start,
       end,
       editMode,
@@ -122,7 +121,6 @@ export default function CropModal({
     
     // 클립 편집 중인 경우: 클립 배열을 실시간으로 업데이트하고 자동 추가는 하지 않음
     if (editingClipId) {
-      console.log('편집 중인 클립의 범위 업데이트:', {
         clipId: editingClipId,
         newStart: start,
         newEnd: end
@@ -135,7 +133,6 @@ export default function CropModal({
           : clip
       ));
       
-      console.log('편집 중인 클립 범위 실시간 업데이트 완료:', {
         clipId: editingClipId,
         updatedStart: start,
         updatedEnd: end
@@ -185,7 +182,6 @@ export default function CropModal({
       setRangeStart(start);
       setRangeEnd(end);
       setIsDragUpdate(true);
-      console.log('기존 클립 ID 재사용으로 범위 업데이트:', {
         clipId: selectedClipId,
         start,
         end
@@ -205,7 +201,6 @@ export default function CropModal({
       setRangeEnd(existingClip.end);
       setIsDragUpdate(false);
       setEditMode('none');
-      console.log('기존 클립 선택:', {
         clipId: existingClip.id,
         start: existingClip.start,
         end: existingClip.end
@@ -235,7 +230,6 @@ export default function CropModal({
     setIsDragUpdate(false); // 편집 모드 진입은 드래그 업데이트 아님
     setEditMode('none'); // clip 모드는 해제
     
-    console.log('새 클립 생성:', {
       clipId: newClip.id,
       start: newClip.start,
       end: newClip.end
@@ -301,7 +295,6 @@ export default function CropModal({
     setRangeEnd(clip.end);
     setIsDragUpdate(false); // 편집 모드 진입은 드래그 업데이트 아님
     
-    console.log('클립 편집 모드 시작:', {
       clipId: clip.id,
       name: clip.name,
       start: clip.start,
@@ -329,7 +322,6 @@ export default function CropModal({
         : clip
     ));
     
-    console.log('클립 편집 저장:', {
       clipId: editingClipId,
       name: editingClipName.trim(),
       shouldUpdateRange,
@@ -357,7 +349,6 @@ export default function CropModal({
         setRangeStart(selectedClip.start);
         setRangeEnd(selectedClip.end);
         
-        console.log('클립 편집 취소 - 원래 범위로 복원:', {
           clipId: selectedClipId,
           originalStart: selectedClip.start,
           originalEnd: selectedClip.end
@@ -368,10 +359,8 @@ export default function CropModal({
       setRangeStart(null);
       setRangeEnd(null);
       
-      console.log('클립 편집 취소 - 범위 초기화');
     }
     
-    console.log('클립 편집 모드 종료:', {
       canceledClipId: cancelingClipId
     });
   };
@@ -439,7 +428,6 @@ export default function CropModal({
           return acc;
         }, []);
         
-        console.log('클립 업데이트 전송:', {
           originalCount: clips.length,
           uniqueCount: uniqueClips.length,
           clipIds: uniqueClips.map(c => c.id)
@@ -464,7 +452,6 @@ export default function CropModal({
 
         // 업데이트된 클립 정보를 받아옴 (backend에서 생성된 URL 포함)
         const updatedData = await clipsResponse.json();
-        console.log('Updated clips data from backend:', updatedData);
       }
 
       // 성공으로 처리하고 모달 닫기 (crop API 제거)

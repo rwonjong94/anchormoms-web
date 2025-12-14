@@ -24,7 +24,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log('Frontend API: GET /api/exams/find', {
       type,
       examnum,
     });
@@ -32,9 +31,6 @@ export async function GET(request: NextRequest) {
     // Backend API로 프록시 - 환경변수에서 Backend URL 가져오기
     const backendBaseUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     const backendUrl = `${backendBaseUrl}/api/exams/find?type=${type}&examnum=${examnum}`;
-    console.log('Backend URL:', backendUrl);
-    console.log('Backend base URL:', backendBaseUrl);
-    console.log('Auth header exists:', !!authHeader);
     
     const response = await fetch(backendUrl, {
       method: 'GET',
@@ -44,8 +40,6 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    console.log('Backend response status:', response.status);
-    console.log('Backend response headers:', [...response.headers.entries()]);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -65,11 +59,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('Backend 응답 성공:');
-    console.log('- 시험 ID:', data.id);
-    console.log('- 문제 데이터 포함 여부:', !!data.Question);
-    console.log('- 문제 개수:', data.Question ? data.Question.length : 0);
-    console.log('- 전체 데이터 키:', Object.keys(data));
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

@@ -23,7 +23,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Frontend API: POST /api/exams/attempts', {
       examId: body.examId,
       studentId: body.studentId,
     });
@@ -40,7 +39,6 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    console.log('Backend response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -56,7 +54,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('시험 시작 성공:', data.id);
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

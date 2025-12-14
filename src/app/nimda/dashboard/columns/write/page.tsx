@@ -298,7 +298,6 @@ function AdminColumnWritePageContent() {
             'Authorization': `Bearer ${token}`,
           },
         });
-        console.log('칼럼 이미지 파일 삭제 완료:', imagePathToDelete);
       } catch (error) {
         console.error('칼럼 이미지 파일 삭제 실패:', error);
       }

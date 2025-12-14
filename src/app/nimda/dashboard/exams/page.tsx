@@ -220,7 +220,6 @@ export default function ExamManagementPage() {
       setLoading(true);
       setError(''); // 에러 초기화
       const token = localStorage.getItem('adminToken');
-      console.log('Fetching exams with token:', token ? 'Present' : 'Missing');
       
       const params = new URLSearchParams({
         page: pagination.page.toString(),
@@ -394,10 +393,8 @@ export default function ExamManagementPage() {
   };
 
   const handleStatusChange = async (examId: string, newStatus: boolean) => {
-    console.log('Status change requested:', { examId, newStatus });
     try {
       const token = localStorage.getItem('adminToken');
-      console.log('Admin token:', token ? 'Found' : 'Not found');
       
       const response = await fetch(`/api/nimda/exams/${examId}/status`, {
         method: 'PATCH',
@@ -408,8 +405,6 @@ export default function ExamManagementPage() {
         body: JSON.stringify({ isActive: newStatus })
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: '상태 변경에 실패했습니다.' }));
@@ -418,7 +413,6 @@ export default function ExamManagementPage() {
       }
 
       const result = await response.json();
-      console.log('API Success result:', result);
 
       // 로컬 상태 즉시 업데이트 (빠른 UI 반응)
       setExams(prevExams => {
@@ -427,7 +421,6 @@ export default function ExamManagementPage() {
             ? { ...exam, isActive: newStatus, updatedAt: new Date().toISOString() }
             : exam
         );
-        console.log('Local state updated:', updatedExams.find(e => e.id === examId));
         return updatedExams;
       });
 
@@ -436,7 +429,6 @@ export default function ExamManagementPage() {
 
       // 백그라운드에서 전체 데이터 새로고침 (데이터 일관성 보장)
       setTimeout(() => {
-        console.log('Refreshing exam list...');
         fetchExams();
       }, 500);
     } catch (error) {

@@ -15,7 +15,6 @@ export async function GET(
       'problem22.png', 'problem33.png', 'problem39.png', 'problem40.png'
     ];
 
-    console.log(`API 호출: examType=${examType}, examNum=${examNum}`);
 
     // 임시 목 데이터 (실제로는 데이터베이스에서 조회)
     const questions = Array.from({ length: 40 }, (_, i) => {
@@ -41,7 +40,6 @@ export async function GET(
         };
         
         if (questionNum <= 5) {
-          console.log(`문제 ${questionNum}: imageName=${imageName}, hasImage=${hasImage}, finalImageName=${finalImageName}, imageUrl=${result.imageUrl}`);
         }
         
         return result;

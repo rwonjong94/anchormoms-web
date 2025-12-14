@@ -83,8 +83,6 @@ export default function LecturesManagePage() {
         ? `${baseUrl}/api/lectures?categoryId=${selectedCategory}`
         : `${baseUrl}/api/lectures`;
       
-      console.log('Fetching lectures with URL:', url);
-      console.log('Selected category:', selectedCategory);
       
       const response = await fetch(url, {
         headers: {
@@ -93,7 +91,6 @@ export default function LecturesManagePage() {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched lectures:', data);
         setLectures(data);
       } else {
         console.error('Failed to fetch lectures, status:', response.status);

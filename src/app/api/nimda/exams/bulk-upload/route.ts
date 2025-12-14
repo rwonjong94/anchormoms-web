@@ -3,12 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 const BACKEND_URL = process.env.BACKEND_URL || 'http://backend:3001';
 
 export async function POST(request: NextRequest) {
-  console.log('🌐 [FRONTEND-API] bulk-upload 요청 시작');
   
   try {
     // Authorization 헤더 가져오기
     const authHeader = request.headers.get('Authorization');
-    console.log('🔑 [FRONTEND-API] 인증 헤더 상태:', !!authHeader);
     
     if (!authHeader) {
       console.error('❌ [FRONTEND-API] 인증 헤더 누락');
@@ -19,7 +17,6 @@ export async function POST(request: NextRequest) {
     }
 
     // FormData를 그대로 backend로 전달
-    console.log('📋 [FRONTEND-API] FormData 파싱 시작');
     const formData = await request.formData();
     
     const formEntries = Array.from(formData.entries()).map(([key, value]) => ({
@@ -29,11 +26,9 @@ export async function POST(request: NextRequest) {
       name: typeof value === 'string' ? undefined : (value as File).name
     }));
     
-    console.log('📋 [FRONTEND-API] FormData 내용:', formEntries);
 
     // Backend API 호출
     const backendUrl = `${BACKEND_URL}/api/nimda/exams/bulk-upload`;
-    console.log('📡 [FRONTEND-API] Backend API 요청 시작:', backendUrl);
     
     const response = await fetch(backendUrl, {
       method: 'POST',
@@ -43,7 +38,6 @@ export async function POST(request: NextRequest) {
       body: formData,
     });
 
-    console.log('📨 [FRONTEND-API] Backend API 응답 수신:', {
       status: response.status,
       statusText: response.statusText,
       ok: response.ok
@@ -51,11 +45,9 @@ export async function POST(request: NextRequest) {
 
     let data;
     const responseText = await response.text();
-    console.log('📄 [FRONTEND-API] Backend 응답 원문:', responseText);
     
     try {
       data = JSON.parse(responseText);
-      console.log('📊 [FRONTEND-API] Backend 응답 파싱 성공:', data);
     } catch (parseError) {
       console.error('💥 [FRONTEND-API] Backend 응답 파싱 실패:', parseError);
       data = { message: responseText };
@@ -70,7 +62,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ [FRONTEND-API] bulk-upload 성공, 응답 반환');
     return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error('💥 [FRONTEND-API] bulk-upload 처리 중 오류:', error);

@@ -24,7 +24,6 @@ export async function POST(
       );
     }
 
-    console.log('Frontend API: POST /api/exams/attempts/{attemptId}/submit-all', {
       attemptId,
     });
 
@@ -39,7 +38,6 @@ export async function POST(
       },
     });
 
-    console.log('Backend response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -55,7 +53,6 @@ export async function POST(
     }
 
     const data = await response.json();
-    console.log('시험 제출 성공:', attemptId);
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

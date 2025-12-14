@@ -48,7 +48,6 @@ const QuestionImage = React.memo(({ imageUrl, questionNumber, imageIndex }: Ques
         }}
         loading="lazy"
         onLoad={() => {
-          console.log(`이미지 로드 성공: ${cleanSrc} (크기: ${imageWidth}px, 비율: ${ratio}%)`);  
           setImageLoaded(true);
           setImageError(false);
         }}

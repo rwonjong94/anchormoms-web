@@ -667,7 +667,6 @@ export default function ArithmeticGeneratorPage() {
 
     setLoading(true);
     try {
-      console.log('PDF 다운로드 시작:', { includeAnswers, problemsCount: Object.keys(problemsByType).length });
 
       // 시작 시험 번호 및 일수
       const startRun = Number(startRunInput) > 0 ? Number(startRunInput) : nextRunNumber;
@@ -725,7 +724,6 @@ export default function ArithmeticGeneratorPage() {
         localStorage.setItem('arithmeticHistory', JSON.stringify(next));
         return next;
       });
-      console.log('단일 PDF 다운로드 완료');
     } catch (error) {
       console.error('PDF 다운로드 오류:', error);
       alert('PDF 다운로드 중 오류가 발생했습니다.');

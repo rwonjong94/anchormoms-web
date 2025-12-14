@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
     backendUrl.searchParams.set('limit', limit.toString());
     backendUrl.searchParams.set('offset', offset.toString());
 
-    console.log('Backend URL:', backendUrl.toString());
 
     const response = await fetch(backendUrl.toString(), {
       method: 'GET',

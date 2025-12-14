@@ -216,7 +216,6 @@ function ExamPageContent() {
   useEffect(() => {
     const refreshParam = searchParams.get('refresh');
     if (refreshParam === 'true' && !authLoading && isAuthenticated) {
-      console.log('시험 제출 후 데이터 새로고침 트리거됨');
       setRefreshKey(prev => prev + 1);
       
       // URL에서 refresh 파라미터 제거 (브라우저 히스토리 정리)

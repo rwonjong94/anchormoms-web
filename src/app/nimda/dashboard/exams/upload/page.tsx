@@ -730,7 +730,6 @@ function ExamUploadPageContent() {
             formData.append(`question_${qIndex}_image_${imgIndex}`, file);
           });
           
-          console.log(`문제 ${qIndex + 1}: 전체 ${question.imageFiles.length}개 중 ${newFiles.length}개 파일만 전송`);
         }
         
         // 정답 이미지 파일 처리
@@ -744,7 +743,6 @@ function ExamUploadPageContent() {
             formData.append(`question_${qIndex}_answer_image_${imgIndex}`, file);
           });
           
-          console.log(`정답 ${qIndex + 1}: 전체 ${question.answerImageFiles.length}개 중 ${newAnswerFiles.length}개 파일만 전송`);
         }
       });
 
@@ -829,20 +827,16 @@ function ExamUploadPageContent() {
 
   // 업로드된 시험 데이터를 불러와서 페이지에 자동으로 채우는 함수
   const loadUploadedExamData = async (examId: string, skipExamInfoUpdate = false) => {
-    console.log('🔄 [LOAD-EXAM] 시험 데이터 로딩 시작:', examId);
     
     try {
       const token = localStorage.getItem('adminToken');
-      console.log('🔑 [LOAD-EXAM] 토큰 상태:', !!token);
       
-      console.log('📡 [LOAD-EXAM] API 요청 시작:', `/api/nimda/exams/${examId}`);
       const response = await fetch(`/api/nimda/exams/${examId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
 
-      console.log('📨 [LOAD-EXAM] API 응답 수신:', {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok
@@ -850,42 +844,30 @@ function ExamUploadPageContent() {
 
       if (response.ok) {
         const examData = await response.json();
-        console.log('🔍 [LOAD-EXAM] API 응답 원본 데이터:', examData);
-        console.log('📊 [LOAD-EXAM] 시험 데이터 수신:', examData);
         
         // ✅ [FIX] Backend 응답 구조 수정: {success: true, exam: {...}} 형태
         const actualExamData = examData.exam || examData; // examData.exam으로 접근하도록 수정
         
         // API 응답 데이터 상세 분석
-        console.log('🔍 [API-DEBUG] 응답 데이터 상세 분석:');
-        console.log('🔍 [API-DEBUG] 원본 응답 구조:', {
           hasSuccess: 'success' in examData,
           hasExam: 'exam' in examData,
           examKeys: actualExamData ? Object.keys(actualExamData) : []
         });
-        console.log('🔍 [API-DEBUG] 시험 기본 정보:', {
           id: actualExamData.id,
           grade: actualExamData.grade,
           type: actualExamData.type,
           questionCount: actualExamData.questions?.length || 0 // 소문자 questions
         });
-        console.log('🔍 [API-DEBUG] 첫 번째 문제 원본 데이터:', actualExamData.questions?.[0]);
         if (actualExamData.questions?.[0]) {
-          console.log('🔍 [API-DEBUG] 첫 번째 문제의 필드들:', Object.keys(actualExamData.questions[0]));
-          console.log('🔍 [API-DEBUG] Answer 데이터:', actualExamData.questions[0].answer);
-          console.log('🔍 [API-DEBUG] Explanation 데이터:', actualExamData.questions[0].explanation);
         } else {
-          console.log('⚠️ [API-DEBUG] 첫 번째 문제에 데이터가 없습니다!');
         }
         
         // 일괄 업로드된 시험 ID 설정 (새 시험 업로드 모드 유지)
-        console.log('🔄 [LOAD-EXAM] 업로드 완료된 시험 데이터 로드:', examId);
         setExistingExamId(examId);
         // setIsEditMode(true); // 수정 모드로 전환하지 않고 새 시험 업로드 페이지 상태 유지
 
         // 문제 데이터 변환 및 설정
         if (actualExamData.questions && actualExamData.questions.length > 0) {
-          console.log('📋 [LOAD-EXAM] 문제 데이터 변환 시작:', actualExamData.questions.length, '개 문제');
           
           const transformedQuestions = actualExamData.questions.map((q: any, index: number) => ({
             questionNum: q.questionNum,
@@ -904,7 +886,6 @@ function ExamUploadPageContent() {
             validationErrors: [],
           }));
 
-          console.log('📋 [LOAD-EXAM] 변환된 문제 데이터:', transformedQuestions.map(q => ({
             questionNum: q.questionNum,
             content: q.content.substring(0, 50) + '...',
             answer: q.answer.substring(0, 30) + '...',
@@ -918,9 +899,6 @@ function ExamUploadPageContent() {
             setSavedQuestions([...transformedQuestions]); // 저장된 상태도 동기화
           });
           
-          console.log('✅ [LOAD-EXAM] 문제 데이터 상태 설정 완료 (flushSync 적용)');
-          console.log('🔍 [LOAD-EXAM] 설정된 질문 수:', transformedQuestions.length);
-          console.log('🔍 [LOAD-EXAM] 첫 번째 문제 샘플:', {
             content: transformedQuestions[0]?.content?.substring(0, 100) + '...',
             answer: transformedQuestions[0]?.answer,
             imageUrls: transformedQuestions[0]?.imageUrls,
@@ -928,17 +906,14 @@ function ExamUploadPageContent() {
           });
           
           // 모든 문제에 대해 유효성 검사 실행
-          console.log('🔍 [LOAD-EXAM] 유효성 검사 시작');
           transformedQuestions.forEach((question, index) => {
             const errors = validateQuestion(question);
             question.hasValidationErrors = errors.length > 0;
             question.validationErrors = errors;
             
             if (errors.length > 0) {
-              console.log(`⚠️ [LOAD-EXAM] 문제 ${index + 1} 유효성 오류:`, errors);
             }
           });
-          console.log('✅ [LOAD-EXAM] 유효성 검사 완료');
           
           // 유효성 검사 결과를 포함한 questions를 다시 state에 적용
           flushSync(() => {
@@ -946,18 +921,13 @@ function ExamUploadPageContent() {
           });
           
           // 첫 번째 문제로 이동
-          console.log('🎯 [LOAD-EXAM] 첫 번째 문제로 이동');
           flushSync(() => {
             setCurrentQuestionIndex(0);
             setActiveTab('question');
           });
-          console.log('🎯 [LOAD-EXAM] 현재 문제 인덱스 설정:', 0);
-          console.log('🎯 [LOAD-EXAM] 활성 탭 설정:', 'question');
 
           // 첫 번째 문제로 이동 후 실제 폼 필드 값 디버깅
-          console.log('🎯 [LOAD-EXAM] 첫 번째 문제로 이동 완료 - 폼 필드 값 확인:');
           const firstQuestion = transformedQuestions[0];
-          console.log('📋 [FORM-DEBUG] 첫 번째 문제 데이터:', {
             questionNum: firstQuestion?.questionNum,
             content: firstQuestion?.content,
             answer: firstQuestion?.answer,
@@ -968,11 +938,9 @@ function ExamUploadPageContent() {
 
           // DOM 요소 실제 값 확인 (짧은 지연 후 확인)
           setTimeout(() => {
-            console.log('🔍 [DOM-DEBUG] 실제 DOM 요소 값 확인:');
             
             // 마크다운 편집기 (문제 내용)
             const contentEditor = document.querySelector('.w-md-editor-content > div');
-            console.log('📝 [DOM-DEBUG] 문제 내용 편집기:', {
               element: !!contentEditor,
               textContent: contentEditor?.textContent?.substring(0, 100) + '...',
               innerHTML: contentEditor?.innerHTML?.substring(0, 100) + '...'
@@ -980,7 +948,6 @@ function ExamUploadPageContent() {
             
             // 정답 입력창
             const answerInput = document.querySelector('input[placeholder*="정답을 입력하세요"]') as HTMLInputElement;
-            console.log('💡 [DOM-DEBUG] 정답 입력창:', {
               element: !!answerInput,
               value: answerInput?.value,
               placeholder: answerInput?.placeholder
@@ -989,14 +956,12 @@ function ExamUploadPageContent() {
             // 해설 마크다운 편집기
             const explanationEditors = document.querySelectorAll('.w-md-editor-content > div');
             const explanationEditor = explanationEditors[1]; // 두 번째가 해설 편집기
-            console.log('📖 [DOM-DEBUG] 해설 편집기:', {
               element: !!explanationEditor,
               textContent: explanationEditor?.textContent?.substring(0, 100) + '...',
               innerHTML: explanationEditor?.innerHTML?.substring(0, 100) + '...'
             });
           }, 500); // 500ms 지연으로 React 렌더링 완료 후 확인
         } else {
-          console.log('📋 [LOAD-EXAM] 문제 데이터 없음');
         }
         
         // 시험 기본 정보 업데이트 (일괄 업로드에서 호출될 때는 건너뜀)
@@ -1014,25 +979,17 @@ function ExamUploadPageContent() {
             targetQuestions: actualExamData.targetQuestions || actualExamData.questions?.length || 0,
             currentQuestions: actualExamData.currentQuestions || actualExamData.questions?.length || 0,
           };
-          console.log('📝 [LOAD-EXAM] 시험 기본 정보 설정 (완전한 정보 포함):', newExamInfo);
           setExamInfo(newExamInfo);
         } else {
-          console.log('📝 [LOAD-EXAM] 시험 기본 정보 업데이트 건너뜀 (일괄 업로드 모드)');
         }
 
-        console.log('✅ [LOAD-EXAM] 데이터 로딩 성공');
         
         // 상태 확인을 위한 디버깅 (약간의 지연 후 확인)
         setTimeout(() => {
-          console.log('🔍 [DEBUG] 최종 상태 확인:');
-          console.log('  - questions 배열 길이:', questions.length);
-          console.log('  - currentQuestionIndex:', currentQuestionIndex);
-          console.log('  - 현재 문제 데이터:', questions[currentQuestionIndex] ? {
             content: questions[currentQuestionIndex].content?.substring(0, 50) + '...',
             answer: questions[currentQuestionIndex].answer,
             imageUrls: questions[currentQuestionIndex].imageUrls?.length || 0
           } : 'undefined');
-          console.log('  - examInfo:', examInfo);
         }, 100);
         
         showStatusToast('업로드된 데이터를 성공적으로 불러왔습니다.', 'success');
@@ -1086,7 +1043,6 @@ function ExamUploadPageContent() {
 
   // 일괄 업로드 핸들러
   const handleBulkUpload = async () => {
-    console.log('🚀 [BULK-UPLOAD] 일괄 업로드 시작');
     
     if (!selectedFolder || parsedProblems.length === 0) {
       console.error('❌ [BULK-UPLOAD] 필수 데이터 누락:', {
@@ -1100,7 +1056,6 @@ function ExamUploadPageContent() {
     
     try {
       // 현재 examInfo 기반으로 최신 nextExamNumber 가져오기
-      console.log('🔢 [BULK-UPLOAD] 최신 시험 번호 확인 중...');
       const latestNextNumber = await fetchNextExamNumber(examInfo.grade, examInfo.type);
       
       // 업데이트된 시험 정보 생성
@@ -1110,30 +1065,23 @@ function ExamUploadPageContent() {
         questionCount: parsedProblems.length, // 업로드할 문제 수로 설정
       };
       
-      console.log('📋 [BULK-UPLOAD] FormData 생성 시작');
       const formData = new FormData();
       
       // 업데이트된 시험 기본 정보 추가
-      console.log('📝 [BULK-UPLOAD] 시험 정보 추가:', updatedExamInfo);
       formData.append('examInfo', JSON.stringify(updatedExamInfo));
       
       // problems.json 데이터 추가
-      console.log('📊 [BULK-UPLOAD] problems 데이터 추가:', parsedProblems.length, '개 문제');
       formData.append('problems', JSON.stringify(parsedProblems));
       
       // 이미지 파일들 추가
       const imageFiles = Array.from(selectedFolder).filter(file => file.type.startsWith('image/'));
-      console.log('🖼️ [BULK-UPLOAD] 이미지 파일 추가:', imageFiles.length, '개 파일');
       imageFiles.forEach((file, index) => {
-        console.log(`   - [${index}] ${file.name} (${file.size} bytes)`);
         formData.append('images', file);
       });
       
       // Backend API 호출
       const token = localStorage.getItem('adminToken');
-      console.log('🔑 [BULK-UPLOAD] 토큰 상태:', !!token);
       
-      console.log('📡 [BULK-UPLOAD] API 요청 시작: /api/nimda/exams/bulk-upload');
       const response = await fetch('/api/nimda/exams/bulk-upload', {
         method: 'POST',
         headers: {
@@ -1142,7 +1090,6 @@ function ExamUploadPageContent() {
         body: formData,
       });
       
-      console.log('📨 [BULK-UPLOAD] API 응답 수신:', {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok
@@ -1150,8 +1097,6 @@ function ExamUploadPageContent() {
       
       if (response.ok) {
         const result = await response.json();
-        console.log('✅ [BULK-UPLOAD] API 응답 성공:', result);
-        console.log('🔍 [BULK-UPLOAD] result.examId 확인:', {
           hasExamId: 'examId' in result,
           examIdValue: result.examId,
           examIdType: typeof result.examId,
@@ -1161,20 +1106,16 @@ function ExamUploadPageContent() {
         showStatusToast('일괄 업로드가 성공적으로 완료되었습니다. 업로드된 내용을 확인하세요.', 'success');
         
         // 현재 페이지의 시험 기본 정보도 업데이트 (시험 정보 섹션에 올바른 값 표시)
-        console.log('📝 [BULK-UPLOAD] 현재 페이지 시험 정보 업데이트:', updatedExamInfo);
         setExamInfo(updatedExamInfo);
         
         // examId가 존재하는지 확인 후 데이터 로드
         if (result.examId) {
-          console.log('🔄 [BULK-UPLOAD] 업로드된 시험 데이터 로드 시작:', result.examId);
           await loadUploadedExamData(result.examId, true); // skipExamInfoUpdate = true
-          console.log('✅ [BULK-UPLOAD] 시험 데이터 로드 완료');
         } else {
           console.error('⚠️ [BULK-UPLOAD] result.examId가 없습니다! API 응답:', result);
         }
 
         // 현재 상태 최종 확인
-        console.log('🔍 [BULK-UPLOAD] 최종 상태 확인:', {
           questionsLength: questions.length,
           currentQuestionIndex,
           activeTab,
@@ -1189,7 +1130,6 @@ function ExamUploadPageContent() {
         setBulkUploadModalOpen(false);
         setSelectedFolder(null);
         setParsedProblems([]);
-        console.log('🧹 [BULK-UPLOAD] 성공 후 정리 작업 완료');
         
       } else {
         console.error('❌ [BULK-UPLOAD] API 응답 실패');
@@ -1219,9 +1159,7 @@ function ExamUploadPageContent() {
       setSelectedFolder(null);
       setParsedProblems([]);
     } finally {
-      console.log('🏁 [BULK-UPLOAD] 로딩 상태 정리');
       setBulkUploadLoading(false);
-      console.log('🏁 [BULK-UPLOAD] 로딩 정리 완료');
     }
   };
 
@@ -1479,12 +1417,10 @@ function ExamUploadPageContent() {
         const result = await response.json();
         
         if (response.ok && result.success) {
-          console.log('문제 이미지 파일 삭제 완료:', imagePathToDelete);
         } else {
           console.warn('문제 이미지 파일 삭제 실패:', result.error || '알 수 없는 오류');
           // 파일이 존재하지 않는 경우는 삭제 성공으로 간주
           if (response.status === 404 || result.error?.includes('존재하지 않습니다')) {
-            console.log('파일이 이미 존재하지 않아 UI에서만 제거합니다.');
           } else {
             serverDeletionSuccessful = false;
             showStatusToast('서버에서 이미지 파일 삭제에 실패했습니다. 다시 시도해주세요.', 'error');
@@ -1537,12 +1473,10 @@ function ExamUploadPageContent() {
         const result = await response.json();
         
         if (response.ok && result.success) {
-          console.log('정답 이미지 파일 삭제 완료:', imagePathToDelete);
         } else {
           console.warn('정답 이미지 파일 삭제 실패:', result.error || '알 수 없는 오류');
           // 파일이 존재하지 않는 경우는 삭제 성공으로 간주
           if (response.status === 404 || result.error?.includes('존재하지 않습니다')) {
-            console.log('파일이 이미 존재하지 않아 UI에서만 제거합니다.');
           } else {
             serverDeletionSuccessful = false;
             showStatusToast('서버에서 이미지 파일 삭제에 실패했습니다. 다시 시도해주세요.', 'error');
@@ -1608,7 +1542,6 @@ function ExamUploadPageContent() {
           formData.append(`question_${qIndex}_image_${imgIndex}`, file);
         });
         
-        console.log(`[최종제출] 문제 ${qIndex + 1}: 전체 ${question.imageFiles.length}개 중 ${newFiles.length}개 파일만 전송`);
       }
       
       // 정답 이미지 파일 처리
@@ -1622,7 +1555,6 @@ function ExamUploadPageContent() {
           formData.append(`question_${qIndex}_answer_image_${imgIndex}`, file);
         });
         
-        console.log(`[최종제출] 정답 ${qIndex + 1}: 전체 ${question.answerImageFiles.length}개 중 ${newAnswerFiles.length}개 파일만 전송`);
       }
     });
 
@@ -1738,7 +1670,6 @@ function ExamUploadPageContent() {
     const question = questions[currentQuestionIndex];
     // 디버깅용 로그 (너무 자주 호출되므로 조건부로 제한)
     if (Math.random() < 0.1) { // 10% 확률로만 로그 출력
-      console.log('🔄 [GET-QUESTION] getCurrentQuestion 호출:', {
         currentIndex: currentQuestionIndex,
         totalQuestions: questions.length,
         hasQuestion: !!question,

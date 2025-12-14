@@ -24,7 +24,6 @@ export async function GET(
       );
     }
 
-    console.log('Frontend API: GET /api/exams/{examId}', {
       examId,
     });
 
@@ -39,7 +38,6 @@ export async function GET(
       },
     });
 
-    console.log('Backend response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -55,7 +53,6 @@ export async function GET(
     }
 
     const data = await response.json();
-    console.log('시험 정보 조회 성공:', examId);
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

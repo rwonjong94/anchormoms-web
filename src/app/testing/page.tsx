@@ -73,46 +73,27 @@ function TestingPageContent() {
 
   // 시험 초기화
   useEffect(() => {
-    console.log('=== useEffect 디버깅 ===');
-    console.log('selectedStudent:', selectedStudent);
-    console.log('selectedStudent?.id:', selectedStudent?.id);
-    console.log('attemptId:', attemptId);
-    console.log('isLoading:', isLoading);
-    console.log('authLoading:', authLoading);
-    console.log('examType:', examType);
-    console.log('examNum:', examNum);
-    console.log('조건 체크:');
-    console.log('  selectedStudent 존재:', !!selectedStudent);
-    console.log('  attemptId 없음:', !attemptId);
-    console.log('  authLoading 완료:', !authLoading);
-    console.log('=========================');
     
     // attemptId가 이미 있으면 중복 초기화 방지
     if (selectedStudent && !attemptId && !authLoading) {
-      console.log('✅ 시험 초기화 조건 충족, initializeExam 호출');
       initializeExam();
     } else {
-      console.log('❌ 시험 초기화 조건 불충족');
     }
   }, [examType, examNum, selectedStudent?.id, attemptId, authLoading]);
 
   const initializeExam = async () => {
     try {
-      console.log('시험 초기화 시작...');
       setIsLoading(true);
       setError(null);
 
       if (!selectedStudent) {
-        console.log('학생이 선택되지 않음');
         setError('학생을 선택해주세요.');
         setIsLoading(false);
         return;
       }
 
-      console.log(`시험 정보: ${examType} ${examNum}회차, 학생: ${selectedStudent.name}`);
 
       // 0. 먼저 해당 시험의 기존 완료 상태 확인
-      console.log('0. 시험 완료 상태 확인 중...');
       const statusCheckUrl = `/api/exams/with-status?studentId=${selectedStudent.id}&type=${examType}&examnum=${parseInt(examNum)}&grade=${selectedStudent.grade}`;
       
       const statusResponse = await fetch(statusCheckUrl, {
@@ -126,7 +107,6 @@ function TestingPageContent() {
         const exam = statusData.exams?.find((e: any) => e.examnum === parseInt(examNum) && e.type === examType);
         
         if (exam?.attemptStatus?.isCompleted) {
-          console.log('이미 완료된 시험입니다. exam 페이지로 리다이렉트');
           showSaveToast('이미 완료된 시험입니다.', 'info');
           setTimeout(() => router.replace('/exam'), 1500); // toast 표시 후 페이지 이동
           return;
@@ -134,11 +114,7 @@ function TestingPageContent() {
       }
 
       // 1. examType과 examNum으로 시험 찾기
-      console.log('1. 시험 정보 조회 중...');
       const examUrl = `/api/exams/find?type=${examType}&examnum=${parseInt(examNum)}`;
-      console.log('API 호출 URL:', examUrl);
-      console.log('사용 중인 토큰:', localStorage.getItem('accessToken') ? '있음' : '없음');
-      console.log('요청 파라미터:', { 
         examType, 
         examNum: parseInt(examNum), 
         grade: selectedStudent.grade 
@@ -150,30 +126,18 @@ function TestingPageContent() {
         },
       });
 
-      console.log('API 응답 상태:', examResponse.status, examResponse.statusText);
-      console.log('응답 헤더:', [...examResponse.headers.entries()]);
       
       if (!examResponse.ok) {
-        console.log('시험 조회 실패:', examResponse.status, examResponse.statusText);
         const errorText = await examResponse.text();
-        console.log('에러 응답 내용:', errorText);
         try {
           const errorJson = JSON.parse(errorText);
-          console.log('에러 응답 JSON:', errorJson);
         } catch (e) {
-          console.log('에러 응답이 JSON이 아님:', errorText);
         }
         throw new Error(`${examType} ${examNum}회차 시험을 찾을 수 없습니다. (${examResponse.status}: ${errorText})`);
       }
 
       const examData = await examResponse.json();
-      console.log('✅ 시험 데이터 조회 성공:');
-      console.log('- 시험 ID:', examData.id);
-      console.log('- 시험 제목/정보:', examData.examnum, examData.type, examData.grade);
-      console.log('- 문제 데이터 존재 여부:', !!examData.Question);
-      console.log('- 문제 개수:', examData.Question ? examData.Question.length : 0);
       if (examData.Question && examData.Question.length > 0) {
-        console.log('- 첫 번째 문제 구조:', {
           id: examData.Question[0].id,
           questionNum: examData.Question[0].questionNum,
           content: examData.Question[0].content ? '있음' : '없음',
@@ -185,7 +149,6 @@ function TestingPageContent() {
       }
 
       // 2. 시험 시도 시작 (ExamAttempt 생성)
-      console.log('2. 시험 시도 생성 중...');
       const attemptResponse = await fetch(`/api/exams/attempts`, {
         method: 'POST',
         headers: {
@@ -199,18 +162,14 @@ function TestingPageContent() {
       });
 
       if (!attemptResponse.ok) {
-        console.log('시험 시도 생성 실패:', attemptResponse.status, attemptResponse.statusText);
         const errorText = await attemptResponse.text();
-        console.log('에러 응답:', errorText);
         throw new Error(`시험 시작에 실패했습니다. (${attemptResponse.status})`);
       }
 
       const attemptData = await attemptResponse.json();
       setAttemptId(attemptData.id);
-      console.log('✅ 시험 시도 생성 성공:', attemptData);
 
       // 3. 문제 데이터 변환
-      console.log('3. 문제 데이터 변환 중...');
       if (!examData.Question || !Array.isArray(examData.Question)) {
         console.error('❌ 시험 문제 데이터가 올바르지 않습니다:');
         console.error('examData.Question 타입:', typeof examData.Question);
@@ -219,10 +178,8 @@ function TestingPageContent() {
         throw new Error('시험 문제 데이터가 올바르지 않습니다.');
       }
 
-      console.log(`문제 데이터 배열 크기: ${examData.Question.length}`);
       
       const transformedQuestions: Question[] = examData.Question.map((q: any, index: number) => {
-        console.log(`문제 ${index + 1} 변환 중:`, {
           id: q.id,
           questionNum: q.questionNum,
           content: q.content ? `"${q.content.substring(0, 50)}..."` : '내용 없음',
@@ -242,12 +199,8 @@ function TestingPageContent() {
         };
       });
 
-      console.log(`✅ 문제 데이터 변환 완료: ${transformedQuestions.length}문제`);
-      console.log('첫 번째 문제 이미지 URLs:', transformedQuestions[0]?.imageUrls);
-      console.log('변환된 첫 번째 문제:', transformedQuestions[0]);
 
       // 4. 시험 세션 생성
-      console.log('4. 시험 세션 생성 중...');
       const newExamSession: ExamSession = {
         examType: examData.type,
         examNum: `${examData.examnum}회차 ${examData.type}`,
@@ -259,7 +212,6 @@ function TestingPageContent() {
       };
 
       // 5. 상태 업데이트
-      console.log('5. 상태 업데이트 중...');
       setExamSession(newExamSession);
       setQuestions(transformedQuestions);
       setCurrentQuestionIndex(0);
@@ -277,15 +229,12 @@ function TestingPageContent() {
       setQuestionStatuses(statuses);
 
       // 캐시 저장 제거 (로컬 캐시 비활성화)
-      console.log('6. 캐시 저장 단계 생략 (로컬 캐시 비활성화)');
 
-      console.log('✅ 시험 초기화 완료!');
 
     } catch (err) {
       console.error('❌ 시험 초기화 실패:', err);
       setError(err instanceof Error ? err.message : '시험을 불러오는 데 실패했습니다. 다시 시도해주세요.');
     } finally {
-      console.log('로딩 상태 해제');
       setIsLoading(false);
     }
   };
@@ -344,7 +293,6 @@ function TestingPageContent() {
       }
 
       const result = await response.json();
-      console.log('답안 저장/업데이트 완료:', {
         questionNumber: answer.questionNumber,
         answer: answer.answer,
         responseId: result.id,
@@ -362,7 +310,6 @@ function TestingPageContent() {
       
       // 재시도 로직
       if (retryCount < maxRetries) {
-        console.log(`답안 저장 재시도 중... (${retryCount + 1}/${maxRetries})`);
         // 지수 백오프: 1초, 2초, 4초 대기
         const delay = Math.pow(2, retryCount) * 1000;
         await new Promise(resolve => setTimeout(resolve, delay));
@@ -442,8 +389,6 @@ function TestingPageContent() {
   // 시험 제출 처리
   const handleSubmit = async (isAutoSubmit = false, isLogout = false) => {
     try {
-      console.log('=== handleSubmit 함수 시작 ===');
-      console.log('파라미터:', { isAutoSubmit, isLogout, attemptId });
       
       if (!attemptId) {
         throw new Error('시험 세션이 유효하지 않습니다.');
@@ -451,15 +396,12 @@ function TestingPageContent() {
 
       // 이미 제출 중인 경우 중복 제출 방지
       if (isSubmitting) {
-        console.log('이미 제출 중이므로 중복 제출 방지');
         return;
       }
 
       setIsSubmitting(true); // 제출 상태 플래그 설정
-      console.log(`시험 제출 시작: ${isAutoSubmit ? '자동 제출' : '수동 제출'}${isLogout ? ' (로그아웃)' : ''}`);
 
       // 빈 답안들을 포함하여 모든 답안 최종 제출
-      console.log('API 호출 시작:', `/api/exams/attempts/${attemptId}/submit-all`);
       const response = await fetch(`/api/exams/attempts/${attemptId}/submit-all`, {
         method: 'POST',
         headers: {
@@ -468,37 +410,31 @@ function TestingPageContent() {
         },
       });
 
-      console.log('API 응답 상태:', response.status, response.statusText);
       
       if (!response.ok) {
         throw new Error(`제출 API 실패: ${response.status} ${response.statusText}`);
       }
 
       // 캐시 정리 제거 (로컬 캐시 비활성화)
-      console.log('캐시 정리 단계 생략 (로컬 캐시 비활성화)');
 
       // History 정리 - 뒤로가기로 다시 testing 페이지로 돌아올 수 없도록 함
       if (typeof window !== 'undefined' && window.history.state?.examInProgress) {
         // 현재 히스토리 엔트리를 대체하여 뒤로가기 방지
         window.history.replaceState(null, '', window.location.href);
-        console.log('히스토리 정리 완료');
       }
 
       // 이동 처리
       if (isLogout) {
         // 로그아웃인 경우 직접 메인페이지로 이동
-        console.log('로그아웃으로 인한 제출 완료, 메인페이지로 이동');
         if (typeof window !== 'undefined') {
           localStorage.removeItem('accessToken');
           window.location.href = '/';
         }
       } else {
         // 일반 제출과 자동 제출 모두 exam 페이지로 이동
-        console.log(`${isAutoSubmit ? '자동' : '수동'} 제출 완료, exam 페이지로 이동`);
         router.replace('/exam?refresh=true'); // push 대신 replace 사용하여 히스토리 스택 정리
       }
       
-      console.log('=== handleSubmit 함수 완료 ===');
     } catch (error) {
       console.error('=== handleSubmit 함수 에러 ===');
       console.error('Failed to submit exam:', error);
@@ -512,7 +448,6 @@ function TestingPageContent() {
   // 시간 종료 처리 - 강제 자동 시험 제출
   const handleTimeUp = useCallback(() => {
     if (timerSetting === 'on') {
-      console.log('타이머 종료! 사용자 동의 없이 강제로 시험을 제출합니다...');
       
       // 강제 제출 안내 toast (3초 후 자동으로 닫힘)
       showSaveToast(
@@ -523,7 +458,6 @@ function TestingPageContent() {
       
       // 사용자 동의 없이 즉시 강제 제출 (모달 표시 없음)
       setTimeout(() => {
-        console.log('강제 자동 제출 실행 중... (사용자 동의 없음)');
         handleSubmit(true); // 자동 제출 플래그로 호출하여 즉시 exam 페이지로 이동
       }, 2000); // 2초 후 강제 제출
     }
@@ -550,7 +484,6 @@ function TestingPageContent() {
     // 페이지가 실제로 언로드될 때 Beacon API로 강제 제출
     const handleUnload = () => {
       if (attemptId && !isSubmitting) {
-        console.log('페이지 언로드 감지 - Beacon API로 시험 제출 시도');
         try {
           const data = new FormData();
           data.append('attemptId', attemptId);
@@ -564,7 +497,6 @@ function TestingPageContent() {
     // 페이지 가시성 변경 시 자동 제출 (탭 전환, 창 최소화 등)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden' && attemptId && !isSubmitting) {
-        console.log('페이지 숨김 감지 - 자동 제출 시도');
         // 비동기로 자동 제출 시도 (시간 여유 있음)
         handleSubmit(true, false).catch(error => {
           console.error('가시성 변경 시 자동 제출 실패:', error);
@@ -594,7 +526,6 @@ function TestingPageContent() {
       event.preventDefault();
       event.stopPropagation();
       
-      console.log('네비게이션 링크 클릭 감지:', href);
       pendingNavigationUrl = href;
       setIsSubmitModalOpen(true);
     };
@@ -649,7 +580,6 @@ function TestingPageContent() {
 
     // 제출 확인 핸들러 수정
     const originalHandleSubmitConfirm = () => {
-      console.log('originalHandleSubmitConfirm 호출됨, pendingNavigationUrl:', pendingNavigationUrl);
       setIsSubmitModalOpen(false);
       setIsSubmitting(true); // 제출 중 플래그 설정
       
@@ -658,20 +588,16 @@ function TestingPageContent() {
       
       if (isLogoutScenario) {
         // 로그아웃 시나리오면 handleSubmit에 isLogout=true 전달
-        console.log('로그아웃 시나리오로 제출 처리');
         handleSubmit(false, true);
         pendingNavigationUrl = null;
       } else {
         // 일반 시나리오
-        console.log('일반 시나리오로 제출 처리');
         handleSubmit(false).then(() => {
           // 제출 완료 후 대기 중인 네비게이션이 있으면 실행, 없으면 기본 /exam으로 이동
           if (pendingNavigationUrl) {
-            console.log('제출 완료, 대기 중인 네비게이션 실행:', pendingNavigationUrl);
             router.replace(pendingNavigationUrl);
             pendingNavigationUrl = null;
           } else {
-            console.log('제출 완료, 기본 /exam 페이지로 이동');
             router.replace('/exam?refresh=true');
           }
         }).catch(error => {
@@ -703,7 +629,6 @@ function TestingPageContent() {
 
   // 제출 확인
   const handleSubmitClick = () => {
-    console.log('handleSubmitClick 함수 호출됨!');
     setIsSubmitModalOpen(true);
   };
 

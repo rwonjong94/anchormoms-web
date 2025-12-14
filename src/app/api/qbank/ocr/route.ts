@@ -263,7 +263,6 @@ export async function POST(req: NextRequest) {
           if (geminiApiKey) {
             fallbackParsed = await extractTextWithGemini(imageBase64);
             fallbackEngine = 'gemini';
-            console.log('Cloud Vision 실패, Gemini로 fallback 성공');
           } else {
             throw new Error('Gemini fallback도 불가능: GEMINI_API_KEY 없음');
           }
@@ -273,7 +272,6 @@ export async function POST(req: NextRequest) {
           if (cloudVisionApiKey) {
             fallbackParsed = await extractTextWithCloudVision(imageBase64);
             fallbackEngine = 'cloud-vision';
-            console.log('Gemini 실패, Cloud Vision으로 fallback 성공');
           } else {
             throw new Error('Cloud Vision fallback도 불가능: GOOGLE_CLOUD_API_KEY 없음');
           }

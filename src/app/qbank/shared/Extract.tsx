@@ -332,7 +332,6 @@ export default function QBankExtract() {
                         ocr.engine === 'cloud-vision' ? 'Cloud Vision' : 
                         ocr.engine === 'external' ? '외부 API' : '알 수 없음';
       const fallbackMsg = ocr.fallback ? ' (fallback)' : '';
-      console.log(`OCR 성공: ${engineName}${fallbackMsg}`);
     } catch (e: any) {
       alert(e.message || 'OCR 중 오류');
     } finally {

@@ -6,7 +6,6 @@ export async function POST(request: NextRequest) {
     const { examType, examNum, answers, submittedAt, isAutoSubmit } = data;
 
     // 임시 구현 - 실제로는 데이터베이스에 저장
-    console.log('Exam submission received:', {
       examType,
       examNum,
       answersCount: answers?.length || 0,

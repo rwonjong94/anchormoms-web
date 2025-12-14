@@ -10,7 +10,6 @@ export async function POST(
 ) {
   try {
     const { id: studentId, counselingId, clipId } = await params;
-    console.log('클립 transcript 생성 API 라우트 호출됨:', { studentId, counselingId, clipId });
     
     const authHeader = request.headers.get('Authorization');
     const body = await request.json();

@@ -23,7 +23,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    console.log('Frontend API: PUT /api/exams/responses', {
       attemptId: body.attemptId,
       questionId: body.questionId,
       answer: body.answer ? `"${body.answer}"` : 'null',
@@ -41,7 +40,6 @@ export async function PUT(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    console.log('Backend response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -57,7 +55,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('답안 저장 성공:', data.id);
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
@@ -96,7 +93,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('Frontend API: POST /api/exams/responses', {
       attemptId: body.attemptId,
       questionId: body.questionId,
       answer: body.answer,
@@ -114,7 +110,6 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    console.log('Backend response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -130,7 +125,6 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log('답안 제출 성공:', data.id);
 
     return NextResponse.json(data, { status: response.status });
   } catch (error) {

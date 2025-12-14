@@ -15,7 +15,6 @@ export async function POST(
       );
     }
 
-    console.log('Beacon API: POST /api/exams/attempts/{attemptId}/submit-beacon', {
       attemptId,
       timestamp: new Date().toISOString(),
     });
@@ -49,7 +48,6 @@ export async function POST(
       }),
     });
 
-    console.log('Backend response status (Beacon):', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -67,7 +65,6 @@ export async function POST(
     }
 
     const data = await response.json();
-    console.log('Beacon 시험 제출 성공:', attemptId);
 
     return NextResponse.json(
       { 

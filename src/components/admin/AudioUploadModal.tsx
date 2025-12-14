@@ -105,8 +105,6 @@ export default function AudioUploadModal({ isOpen, onClose, studentId, onUploadS
       const token = localStorage.getItem('adminToken');
       
       // 토큰 디버깅 (임시)
-      console.log('Admin token:', token ? `${token.substring(0, 20)}...` : 'null');
-      console.log('Upload URL:', `/api/nimda/students/${studentId}/audio-counselings/upload`);
       
       // 토큰 확인
       if (!token) {
