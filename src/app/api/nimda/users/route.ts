@@ -11,7 +11,8 @@ async function verifyAdminAuth(request: NextRequest) {
   const token = authHeader.substring(7);
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
-    if (decoded.role !== 'admin') {
+    // 백엔드에서 admin 토큰은 sub: 'admin'으로 생성됨
+    if (decoded.sub !== 'admin') {
       return null;
     }
     return decoded;
