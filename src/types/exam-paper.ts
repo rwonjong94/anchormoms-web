@@ -39,4 +39,4 @@ export interface CreateExamPaperDto {
   thumbnailImage?: string;
 }
 
-export interface UpdateExamPaperDto extends Partial<CreateExamPaperDto> {}
+export type UpdateExamPaperDto = Partial<CreateExamPaperDto>;
