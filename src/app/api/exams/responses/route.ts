@@ -23,11 +23,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-      attemptId: body.attemptId,
-      questionId: body.questionId,
-      answer: body.answer ? `"${body.answer}"` : 'null',
-    });
-
     // Backend API로 프록시
     const backendBaseUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     const backendUrl = `${backendBaseUrl}/api/exams/responses`;
@@ -92,11 +87,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
-
-      attemptId: body.attemptId,
-      questionId: body.questionId,
-      answer: body.answer,
-    });
 
     // Backend API로 프록시
     const backendBaseUrl = process.env.BACKEND_URL || 'http://localhost:3001';

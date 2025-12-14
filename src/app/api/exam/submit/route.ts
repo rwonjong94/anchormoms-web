@@ -6,13 +6,6 @@ export async function POST(request: NextRequest) {
     const { examType, examNum, answers, submittedAt, isAutoSubmit } = data;
 
     // 임시 구현 - 실제로는 데이터베이스에 저장
-      examType,
-      examNum,
-      answersCount: answers?.length || 0,
-      submittedAt,
-      isAutoSubmit: isAutoSubmit ? '자동 제출' : '수동 제출',
-    });
-
     // 간단한 점수 계산 (임시)
     const totalQuestions = 40;
     const answeredQuestions = answers?.filter((a: any) => a.answer?.trim()).length || 0;

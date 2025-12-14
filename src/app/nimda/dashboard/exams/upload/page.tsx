@@ -837,11 +837,6 @@ function ExamUploadPageContent() {
         },
       });
 
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-
       if (response.ok) {
         const examData = await response.json();
         
@@ -849,19 +844,6 @@ function ExamUploadPageContent() {
         const actualExamData = examData.exam || examData; // examData.exam으로 접근하도록 수정
         
         // API 응답 데이터 상세 분석
-          hasSuccess: 'success' in examData,
-          hasExam: 'exam' in examData,
-          examKeys: actualExamData ? Object.keys(actualExamData) : []
-        });
-          id: actualExamData.id,
-          grade: actualExamData.grade,
-          type: actualExamData.type,
-          questionCount: actualExamData.questions?.length || 0 // 소문자 questions
-        });
-        if (actualExamData.questions?.[0]) {
-        } else {
-        }
-        
         // 일괄 업로드된 시험 ID 설정 (새 시험 업로드 모드 유지)
         setExistingExamId(examId);
         // setIsEditMode(true); // 수정 모드로 전환하지 않고 새 시험 업로드 페이지 상태 유지
@@ -886,25 +868,12 @@ function ExamUploadPageContent() {
             validationErrors: [],
           }));
 
-            questionNum: q.questionNum,
-            content: q.content.substring(0, 50) + '...',
-            answer: q.answer.substring(0, 30) + '...',
-            imageUrls: q.imageUrls?.length || 0,
-            answerImageUrls: q.answerImageUrls?.length || 0
-          })));
-
           // React 18 automatic batching 우회하여 즉시 상태 업데이트
           flushSync(() => {
             setQuestions(transformedQuestions);
             setSavedQuestions([...transformedQuestions]); // 저장된 상태도 동기화
           });
-          
-            content: transformedQuestions[0]?.content?.substring(0, 100) + '...',
-            answer: transformedQuestions[0]?.answer,
-            imageUrls: transformedQuestions[0]?.imageUrls,
-            answerImageUrls: transformedQuestions[0]?.answerImageUrls
-          });
-          
+
           // 모든 문제에 대해 유효성 검사 실행
           transformedQuestions.forEach((question, index) => {
             const errors = validateQuestion(question);
@@ -928,38 +897,19 @@ function ExamUploadPageContent() {
 
           // 첫 번째 문제로 이동 후 실제 폼 필드 값 디버깅
           const firstQuestion = transformedQuestions[0];
-            questionNum: firstQuestion?.questionNum,
-            content: firstQuestion?.content,
-            answer: firstQuestion?.answer,
-            explanation: firstQuestion?.explanation,
-            imageUrls: firstQuestion?.imageUrls,
-            answerImageUrls: firstQuestion?.answerImageUrls
-          });
 
           // DOM 요소 실제 값 확인 (짧은 지연 후 확인)
           setTimeout(() => {
             
             // 마크다운 편집기 (문제 내용)
             const contentEditor = document.querySelector('.w-md-editor-content > div');
-              element: !!contentEditor,
-              textContent: contentEditor?.textContent?.substring(0, 100) + '...',
-              innerHTML: contentEditor?.innerHTML?.substring(0, 100) + '...'
-            });
-            
+
             // 정답 입력창
             const answerInput = document.querySelector('input[placeholder*="정답을 입력하세요"]') as HTMLInputElement;
-              element: !!answerInput,
-              value: answerInput?.value,
-              placeholder: answerInput?.placeholder
-            });
-            
+
             // 해설 마크다운 편집기
             const explanationEditors = document.querySelectorAll('.w-md-editor-content > div');
             const explanationEditor = explanationEditors[1]; // 두 번째가 해설 편집기
-              element: !!explanationEditor,
-              textContent: explanationEditor?.textContent?.substring(0, 100) + '...',
-              innerHTML: explanationEditor?.innerHTML?.substring(0, 100) + '...'
-            });
           }, 500); // 500ms 지연으로 React 렌더링 완료 후 확인
         } else {
         }
@@ -983,15 +933,7 @@ function ExamUploadPageContent() {
         } else {
         }
 
-        
-        // 상태 확인을 위한 디버깅 (약간의 지연 후 확인)
-        setTimeout(() => {
-            content: questions[currentQuestionIndex].content?.substring(0, 50) + '...',
-            answer: questions[currentQuestionIndex].answer,
-            imageUrls: questions[currentQuestionIndex].imageUrls?.length || 0
-          } : 'undefined');
-        }, 100);
-        
+
         showStatusToast('업로드된 데이터를 성공적으로 불러왔습니다.', 'success');
         
       } else {
@@ -1089,19 +1031,9 @@ function ExamUploadPageContent() {
         },
         body: formData,
       });
-      
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-      
+
       if (response.ok) {
         const result = await response.json();
-          hasExamId: 'examId' in result,
-          examIdValue: result.examId,
-          examIdType: typeof result.examId,
-          allResultKeys: Object.keys(result)
-        });
         
         showStatusToast('일괄 업로드가 성공적으로 완료되었습니다. 업로드된 내용을 확인하세요.', 'success');
         
@@ -1116,16 +1048,6 @@ function ExamUploadPageContent() {
         }
 
         // 현재 상태 최종 확인
-          questionsLength: questions.length,
-          currentQuestionIndex,
-          activeTab,
-          firstQuestionSample: questions[0] ? {
-            content: questions[0].content?.substring(0, 50) + '...',
-            answer: questions[0].answer,
-            explanation: questions[0].explanation?.substring(0, 50) + '...'
-          } : null
-        });
-        
         // 성공적으로 완료된 후 정리 작업
         setBulkUploadModalOpen(false);
         setSelectedFolder(null);
@@ -1668,16 +1590,6 @@ function ExamUploadPageContent() {
 
   const getCurrentQuestion = (): Question | undefined => {
     const question = questions[currentQuestionIndex];
-    // 디버깅용 로그 (너무 자주 호출되므로 조건부로 제한)
-    if (Math.random() < 0.1) { // 10% 확률로만 로그 출력
-        currentIndex: currentQuestionIndex,
-        totalQuestions: questions.length,
-        hasQuestion: !!question,
-        content: question?.content?.substring(0, 50) + '...',
-        answer: question?.answer,
-        explanation: question?.explanation?.substring(0, 50) + '...'
-      });
-    }
     return question;
   };
 

@@ -38,11 +38,6 @@ export async function POST(request: NextRequest) {
       body: formData,
     });
 
-      status: response.status,
-      statusText: response.statusText,
-      ok: response.ok
-    });
-
     let data;
     const responseText = await response.text();
     

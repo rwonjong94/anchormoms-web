@@ -24,10 +24,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-      type,
-      examnum,
-    });
-
     // Backend API로 프록시 - 환경변수에서 Backend URL 가져오기
     const backendBaseUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     const backendUrl = `${backendBaseUrl}/api/exams/find?type=${type}&examnum=${examnum}`;

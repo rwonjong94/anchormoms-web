@@ -24,9 +24,6 @@ export async function GET(
       );
     }
 
-      examId,
-    });
-
     // Backend API로 프록시
     const backendBaseUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     const backendUrl = `${backendBaseUrl}/api/exams/${examId}/questions`;

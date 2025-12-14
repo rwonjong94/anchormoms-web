@@ -115,11 +115,7 @@ function TestingPageContent() {
 
       // 1. examType과 examNum으로 시험 찾기
       const examUrl = `/api/exams/find?type=${examType}&examnum=${parseInt(examNum)}`;
-        examType, 
-        examNum: parseInt(examNum), 
-        grade: selectedStudent.grade 
-      });
-      
+
       const examResponse = await fetch(examUrl, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
@@ -137,16 +133,6 @@ function TestingPageContent() {
       }
 
       const examData = await examResponse.json();
-      if (examData.Question && examData.Question.length > 0) {
-          id: examData.Question[0].id,
-          questionNum: examData.Question[0].questionNum,
-          content: examData.Question[0].content ? '있음' : '없음',
-          imageUrls: examData.Question[0].imageUrls,
-          hasAnswer: !!examData.Question[0].Answer
-        });
-      } else {
-        console.error('❌ 문제 데이터가 없습니다!');
-      }
 
       // 2. 시험 시도 시작 (ExamAttempt 생성)
       const attemptResponse = await fetch(`/api/exams/attempts`, {
@@ -178,16 +164,8 @@ function TestingPageContent() {
         throw new Error('시험 문제 데이터가 올바르지 않습니다.');
       }
 
-      
+
       const transformedQuestions: Question[] = examData.Question.map((q: any, index: number) => {
-          id: q.id,
-          questionNum: q.questionNum,
-          content: q.content ? `"${q.content.substring(0, 50)}..."` : '내용 없음',
-          imageUrls: q.imageUrls,
-          answerExists: !!q.Answer,
-          answerCount: q.Answer ? q.Answer.length : 0
-        });
-        
         return {
           id: q.id,
           questionNumber: q.questionNum,
@@ -293,11 +271,7 @@ function TestingPageContent() {
       }
 
       const result = await response.json();
-        questionNumber: answer.questionNumber,
-        answer: answer.answer,
-        responseId: result.id,
-      });
-      
+
       // 저장 성공 시 사용자에게 시각적 피드백 (선택적)
       // 너무 자주 표시되지 않도록 조건부로 처리
       if (retryCount > 0) {

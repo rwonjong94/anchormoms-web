@@ -23,10 +23,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-      examId: body.examId,
-      studentId: body.studentId,
-    });
-
     // Backend API로 프록시
     const backendBaseUrl = process.env.BACKEND_URL || 'http://localhost:3001';
     const backendUrl = `${backendBaseUrl}/exams/attempts`;

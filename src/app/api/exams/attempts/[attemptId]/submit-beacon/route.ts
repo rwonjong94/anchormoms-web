@@ -15,10 +15,6 @@ export async function POST(
       );
     }
 
-      attemptId,
-      timestamp: new Date().toISOString(),
-    });
-
     // FormData 처리 (Beacon API는 FormData 전송)
     const formData = await request.formData();
     const submittedAttemptId = formData.get('attemptId') as string;
