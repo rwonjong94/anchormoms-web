@@ -1,15 +1,36 @@
-// @ts-nocheck
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const dynamic = 'force-dynamic';
 
-type OcrParsed = {
+interface OcrParsed {
   prob_text?: string;
   prob_rate?: number | null;
   exam_info?: string;
   prob_num?: number;
-};
+}
+
+interface CloudVisionResponse {
+  responses?: Array<{
+    fullTextAnnotation?: {
+      text?: string;
+    };
+  }>;
+}
+
+interface OcrRequestBody {
+  imageBase64?: string;
+  ocrEngine?: string;
+}
+
+interface ExternalOcrResponse {
+  prob_text?: string;
+  prob_rate?: number | null;
+  exam_info?: string;
+  prob_num?: number;
+  parsed?: OcrParsed;
+  error?: string;
+}
 
 async function extractTextWithCloudVision(imageBase64: string): Promise<OcrParsed> {
   const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
@@ -91,7 +112,8 @@ async function extractTextWithCloudVision(imageBase64: string): Promise<OcrParse
 
   } catch (error) {
     console.error('Cloud Vision API 호출 실패:', error);
-    throw new Error(`Cloud Vision API 호출 실패: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Cloud Vision API 호출 실패: ${errorMessage}`);
   }
 }
 
@@ -144,11 +166,11 @@ async function extractTextWithGemini(imageBase64: string): Promise<OcrParsed> {
     try {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
+        const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
         // 점수 표시 제거 함수
-        const cleanText = (text) => {
-          if (!text) return undefined;
-          return text.replace(/\[\d+점\]/g, '').trim() || undefined;
+        const cleanText = (input: unknown): string | undefined => {
+          if (typeof input !== 'string') return undefined;
+          return input.replace(/\[\d+점\]/g, '').trim() || undefined;
         };
 
         return {
@@ -173,15 +195,16 @@ async function extractTextWithGemini(imageBase64: string): Promise<OcrParsed> {
 
   } catch (error) {
     console.error('Gemini Vision API 호출 실패:', error);
-    throw new Error(`Gemini Vision API 호출 실패: ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new Error(`Gemini Vision API 호출 실패: ${errorMessage}`);
   }
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const imageBase64 = String(body?.imageBase64 || '');
-    const ocrEngine = String(body?.ocrEngine || 'gemini'); // 기본값: gemini
+    const body = await req.json().catch(() => ({})) as OcrRequestBody;
+    const imageBase64 = String(body.imageBase64 || '');
+    const ocrEngine = String(body.ocrEngine || 'gemini'); // 기본값: gemini
     
     if (!imageBase64) {
       return NextResponse.json({ error: 'imageBase64 필수' }, { status: 400 });
@@ -200,25 +223,26 @@ export async function POST(req: NextRequest) {
           },
           body: JSON.stringify({ imageBase64, ocrEngine }),
         });
-        const data = await resp.json().catch(() => ({}));
+        const data = await resp.json().catch(() => ({})) as ExternalOcrResponse;
         if (!resp.ok) {
-          throw new Error(data?.error || `외부 OCR 실패(${resp.status})`);
+          throw new Error(data.error || `외부 OCR 실패(${resp.status})`);
         }
         // 점수 표시 제거 함수
-        const cleanText = (text) => {
-          if (!text) return undefined;
-          return text.replace(/\[\d+점\]/g, '').trim() || undefined;
+        const cleanText = (input: unknown): string | undefined => {
+          if (typeof input !== 'string') return undefined;
+          return input.replace(/\[\d+점\]/g, '').trim() || undefined;
         };
 
         const parsed: OcrParsed = {
-          prob_text: cleanText(data?.prob_text ?? data?.parsed?.prob_text),
-          prob_rate: data?.prob_rate ?? data?.parsed?.prob_rate ?? null,
-          exam_info: cleanText(data?.exam_info ?? data?.parsed?.exam_info),
-          prob_num: typeof (data?.prob_num ?? data?.parsed?.prob_num) === 'number' ? (data?.prob_num ?? data?.parsed?.prob_num) : undefined,
+          prob_text: cleanText(data.prob_text ?? data.parsed?.prob_text),
+          prob_rate: data.prob_rate ?? data.parsed?.prob_rate ?? null,
+          exam_info: cleanText(data.exam_info ?? data.parsed?.exam_info),
+          prob_num: typeof (data.prob_num ?? data.parsed?.prob_num) === 'number' ? (data.prob_num ?? data.parsed?.prob_num) : undefined,
         };
         return NextResponse.json({ parsed, engine: 'external' });
-      } catch (e: any) {
-        console.error('외부 OCR API 실패, 다른 엔진으로 fallback:', e.message);
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        console.error('외부 OCR API 실패, 다른 엔진으로 fallback:', errorMessage);
         // 외부 OCR 실패 시 선택된 엔진으로 fallback
       }
     }
@@ -249,9 +273,10 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({ parsed, engine: engineUsed });
-    } catch (e: any) {
-      console.error(`${ocrEngine} OCR 엔진 실패:`, e.message);
-      
+    } catch (e) {
+      const eMessage = e instanceof Error ? e.message : String(e);
+      console.error(`${ocrEngine} OCR 엔진 실패:`, eMessage);
+
       // 실패한 엔진과 다른 엔진으로 fallback 시도
       try {
         let fallbackParsed: OcrParsed;
@@ -278,15 +303,17 @@ export async function POST(req: NextRequest) {
         }
 
         return NextResponse.json({ parsed: fallbackParsed, engine: fallbackEngine, fallback: true });
-      } catch (fallbackError: any) {
-        console.error('Fallback도 실패:', fallbackError.message);
-        return NextResponse.json({ error: `모든 OCR 엔진 실패: ${e.message}` }, { status: 502 });
+      } catch (fallbackError) {
+        const fallbackMessage = fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
+        console.error('Fallback도 실패:', fallbackMessage);
+        return NextResponse.json({ error: `모든 OCR 엔진 실패: ${eMessage}` }, { status: 502 });
       }
     }
 
-  } catch (err: any) {
+  } catch (err) {
     console.error('OCR API 전체 실패:', err);
-    return NextResponse.json({ error: err?.message || 'OCR 실패' }, { status: 500 });
+    const errMessage = err instanceof Error ? err.message : 'OCR 실패';
+    return NextResponse.json({ error: errMessage }, { status: 500 });
   }
 }
 

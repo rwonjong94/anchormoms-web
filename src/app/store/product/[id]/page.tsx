@@ -6,6 +6,7 @@ import { useCart } from '@/hooks/useCart';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import Link from 'next/link';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface StoreProduct {
   id: string;
@@ -238,9 +239,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
                 상품 설명
               </h3>
-              <div 
+              <div
                 className="prose prose-gray dark:prose-invert max-w-none"
-                dangerouslySetInnerHTML={{ __html: product.content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.content) }}
               />
             </div>
 
