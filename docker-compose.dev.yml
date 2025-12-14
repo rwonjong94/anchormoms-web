@@ -1,11 +1,11 @@
-# Mogo Frontend - Docker Compose Configuration (Development)
+# Anchor Moms Club - Web Application - Docker Compose Configuration (Development)
 # Service: Next.js Frontend with hot reload
 
 services:
   # Frontend Application (Development mode)
   frontend:
     image: node:18-alpine
-    container_name: mogo-frontend-dev
+    container_name: anchormoms-frontend-dev
     restart: unless-stopped
     working_dir: /app
     env_file:
@@ -31,9 +31,9 @@ services:
       - /app/node_modules
       - /app/.next
     networks:
-      - mogo-network
+      - anchormoms-network
     command: sh -c "npm install && npm run dev"
 
 networks:
-  mogo-network:
+  anchormoms-network:
     driver: bridge

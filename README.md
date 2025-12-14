@@ -1,8 +1,14 @@
-# Mogo Frontend
+# Anchor Moms Club - Web Application
 
 > 초등학생을 위한 수학 모의고사 플랫폼 - Frontend Web Application
 
 Next.js 15 (App Router) + React 19 + Tailwind CSS 4 기반 모바일 우선 반응형 웹앱
+
+## 📦 Repository
+
+This is the **Web Application** repository for Anchor Moms Club.
+- **Repository**: anchormoms-web
+- **Companion Backend**: anchormoms-api
 
 ---
 
@@ -11,7 +17,7 @@ Next.js 15 (App Router) + React 19 + Tailwind CSS 4 기반 모바일 우선 반�
 ### Prerequisites
 
 - Node.js 18+
-- Backend API server running (see mogo-backend repository)
+- Backend API server running (see anchormoms-api repository)
 
 ### Installation
 
@@ -184,10 +190,10 @@ npm run lint
 
 ```bash
 # Build image
-docker build -t mogo-frontend .
+docker build -t anchormoms-web .
 
 # Run container
-docker run -p 3000:3000 mogo-frontend
+docker run -p 3000:3000 anchormoms-web
 ```
 
 ---

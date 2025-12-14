@@ -1,4 +1,4 @@
-# CLAUDE.md - Mogo Frontend (Next.js)
+# CLAUDE.md - Anchor Moms Club - Web Application (Next.js)
 
 > **초등학생을 위한 수학 모의고사 플랫폼 - Frontend Application**
 > Next.js 15 + React 19 + Tailwind CSS 기반 웹 애플리케이션
@@ -26,7 +26,7 @@
 
 ### 역할 및 책임
 
-이 프론트엔드 애플리케이션은 Mogo 플랫폼의 **사용자 인터페이스와 사용자 경험을 담당**합니다.
+이 프론트엔드 애플리케이션은 Anchor Moms Club 플랫폼의 **사용자 인터페이스와 사용자 경험을 담당**합니다.
 
 **핵심 원칙:**
 - ✅ **UI/UX에만 집중** - 비즈니스 로직은 백엔드에 위임
@@ -2477,7 +2477,7 @@ CMD ["node", "server.js"]
 
 **빌드:**
 ```bash
-docker build -t mogo-frontend:latest .
+docker build -t anchormoms-web:latest .
 ```
 
 ### 성능 최적화
