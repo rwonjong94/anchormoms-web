@@ -5,7 +5,10 @@ import jwt from 'jsonwebtoken';
 const backendUrl = process.env.BACKEND_URL || 'http://localhost:3001';
 
 function mintAdminToken(): string {
-  const secret = process.env.JWT_SECRET || 'dev-jwt-secret-key-for-development-only';
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET 환경변수가 설정되지 않았습니다.');
+  }
   return jwt.sign(
     {
       sub: 'admin',

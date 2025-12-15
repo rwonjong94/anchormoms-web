@@ -10,7 +10,8 @@ async function verifyAdminAuth(request: NextRequest) {
 
   const token = authHeader.substring(7);
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+    if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET not set');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
     if (decoded.sub !== 'admin') {
       return null;
     }

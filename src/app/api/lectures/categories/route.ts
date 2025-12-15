@@ -11,7 +11,8 @@ function verifyAdminToken(authHeader: string | null) {
 
   try {
     const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
+    if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET not set');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET) as any;
     return decoded.role === 'admin' ? decoded : null;
   } catch (error) {
     return null;
