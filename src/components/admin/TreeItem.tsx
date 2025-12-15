@@ -146,6 +146,7 @@ export default function TreeItem({
     const startTime = clip.startTime ?? clip.start;
     const endTime = clip.endTime ?? clip.end;
     
+    console.log('클립 선택:', {
       clipId: clip.id,
       clipUrl: clip.url,
       originalUrl: url,
