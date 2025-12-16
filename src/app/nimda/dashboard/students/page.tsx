@@ -4,36 +4,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-
-interface Student {
-  id: string;
-  name: string;
-  grade: number;
-  school?: string;
-  phone?: string;
-  userId?: string;
-  createdAt: string;
-  updatedAt: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    googleId?: string;
-    kakaoId?: string;
-  };
-}
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  students?: Student[];
-}
+import {
+  type Student,
+  type StudentsListResponse,
+  type CreateStudentDto,
+  type UpdateStudentDto,
+  StudentsListResponseSchema,
+  CreateStudentDtoSchema,
+  formatZodError,
+} from '@/dto';
+import type { UserSearchResult } from '@/dto/user';
 
 export default function StudentsManagementPage() {
   const [students, setStudents] = useState<Student[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'table' | 'card'>('table');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -48,9 +32,10 @@ export default function StudentsManagementPage() {
   // 부모 검색 관련 상태
   const [showParentSearchModal, setShowParentSearchModal] = useState(false);
   const [parentSearchQuery, setParentSearchQuery] = useState('');
-  const [parentSearchResults, setParentSearchResults] = useState<User[]>([]);
-  const [selectedParent, setSelectedParent] = useState<User | null>(null);
+  const [parentSearchResults, setParentSearchResults] = useState<UserSearchResult[]>([]);
+  const [selectedParent, setSelectedParent] = useState<UserSearchResult | null>(null);
   const [isSearchingParent, setIsSearchingParent] = useState(false);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   
   const router = useRouter();
   const { requireAuth } = useAdminAuth();
@@ -100,10 +85,18 @@ export default function StudentsManagementPage() {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        setStudents(data.students || []);
+        // Zod 스키마로 응답 검증
+        const result = StudentsListResponseSchema.safeParse(data);
+        if (result.success) {
+          setStudents(result.data.students);
+        } else {
+          console.warn('[DTO Validation Warning]', result.error.errors);
+          // 검증 실패해도 데이터는 사용 (개발 중 유연성)
+          setStudents(data.students || []);
+        }
       } else {
         console.error('학생 목록 조회 실패');
       }
@@ -135,6 +128,20 @@ export default function StudentsManagementPage() {
   }, []);
 
   const handleAddStudent = async () => {
+    // Zod 스키마로 폼 데이터 검증
+    const validationResult = CreateStudentDtoSchema.safeParse(formData);
+    if (!validationResult.success) {
+      const errors: Record<string, string> = {};
+      validationResult.error.errors.forEach((err) => {
+        const path = err.path.join('.');
+        if (path) errors[path] = err.message;
+      });
+      setFormErrors(errors);
+      alert(formatZodError(validationResult.error));
+      return;
+    }
+    setFormErrors({});
+
     try {
       const token = localStorage.getItem('adminToken');
       const response = await fetch('/api/nimda/students', {
@@ -143,7 +150,7 @@ export default function StudentsManagementPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(validationResult.data),
       });
 
       if (response.ok) {
@@ -312,7 +319,7 @@ export default function StudentsManagementPage() {
   };
 
   // 검색된 부모 선택
-  const selectParent = (parent: User) => {
+  const selectParent = (parent: UserSearchResult) => {
     setSelectedParent(parent);
   };
 
