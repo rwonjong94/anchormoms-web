@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { type ExamType, formatZodError } from '@/dto';
 
+// 시험 관리 페이지 전용 타입
 interface ExamData {
   id: string;
   type: string;
@@ -51,7 +53,7 @@ interface FilterConfig {
   enabled: boolean;
   sortOrder: 'asc' | 'desc';
   filterValue: string;
-  filterOperator?: 'gte' | 'lte'; // 정답률 필터용
+  filterOperator?: 'gte' | 'lte';
 }
 
 interface PopupPosition {

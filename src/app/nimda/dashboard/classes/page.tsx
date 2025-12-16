@@ -3,13 +3,33 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { Student, ClassLecture, ClassLog, TabType } from '@/types/class';
+import {
+  type Student,
+  type ClassLog,
+  CreateClassDtoSchema,
+  CreateClassLogDtoSchema,
+  formatZodError,
+} from '@/dto';
+
+// 로컬 타입 (기존 types/class.ts 대체)
+type TabType = '수업 관리' | '수업 일지';
+
+interface ClassLecture {
+  id: string;
+  name: string;
+  description: string;
+  subject: string;
+  grade: number;
+  schedule: any;
+  students: Array<{ id: string; name: string; grade: number; school?: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
 
 type ScheduleEntry = { day: string; start: string; end: string };
 type NewClassForm = {
   name: string;
   description: string;
-  // subject/grade는 생성 UI에서 제거되지만, 기존 스키마 호환을 위해 유지
   subject?: string;
   grade?: number;
   schedule: ScheduleEntry[];

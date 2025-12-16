@@ -3,26 +3,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
+import {
+  type Student,
+  type Counseling,
+  CreateCounselingDtoSchema,
+  formatZodError,
+} from '@/dto';
 
-interface Student {
-  id: string;
-  name: string;
-  grade: number;
-  school?: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-  };
-}
-
-interface CounselingLog {
-  id: string;
-  title: string;
-  content: string;
-  date: string;
-  createdAt: string;
-  updatedAt: string;
+// CounselingLog 타입 (Counseling 확장)
+interface CounselingLog extends Omit<Counseling, 'studentId'> {
   student: Student;
 }
 
