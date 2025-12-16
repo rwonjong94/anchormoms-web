@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import StudentInfoSection from '@/components/admin/StudentInfoSection';
+import { type Student, StudentSchema } from '@/dto';
 
 interface Attempt {
   id: string;
@@ -15,13 +16,6 @@ interface Attempt {
     examnum?: number | null;
     memo?: string | null;
   };
-}
-
-interface Student {
-  id: string;
-  name: string;
-  grade: number;
-  school?: string;
 }
 
 export default function StudentScoresPage() {
@@ -42,7 +36,14 @@ export default function StudentScoresPage() {
       });
       if (resp.ok) {
         const data = await resp.json();
-        setStudent({ id: data.id, name: data.name, grade: data.grade, school: data.school });
+        // Validate with Zod and extract needed fields
+        const validation = StudentSchema.safeParse(data);
+        if (validation.success) {
+          setStudent(validation.data);
+        } else {
+          console.error('[StudentScoresPage] Invalid student data:', validation.error);
+          setStudent({ id: data.id, name: data.name, grade: data.grade, school: data.school } as Student);
+        }
       }
     };
     const fetchAttempts = async () => {

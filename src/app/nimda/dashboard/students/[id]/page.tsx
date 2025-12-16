@@ -5,25 +5,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import StudentInfoSection from '@/components/admin/StudentInfoSection';
 import ScheduleEditor, { WeeklySchedule } from '@/components/admin/ScheduleEditor';
 import RoadmapEditor from '@/components/admin/RoadmapEditor';
-
-interface Student {
-  id: string;
-  name: string;
-  grade: number;
-  school?: string;
-  phone?: string;
-  userId?: string;
-  createdAt: string;
-  updatedAt: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    googleId?: string;
-    kakaoId?: string;
-  };
-}
+import { type Student, StudentSchema } from '@/dto';
 
 export default function StudentDetailPage() {
   const params = useParams();
@@ -60,7 +42,14 @@ export default function StudentDetailPage() {
         });
         if (resp.ok) {
           const data = await resp.json();
-          setStudent(data);
+          // Validate response with Zod
+          const validation = StudentSchema.safeParse(data);
+          if (validation.success) {
+            setStudent(validation.data);
+          } else {
+            console.error('[StudentDetailPage] Invalid student data:', validation.error);
+            setStudent(data); // fallback to raw data
+          }
         }
       } finally {
         setStudentLoading(false);

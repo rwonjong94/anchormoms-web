@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { CreateStudentDtoSchema, formatZodError } from '@/dto';
 
 // 백엔드 URL (컨테이너 환경 기본값)
 const BACKEND_URL = process.env.BACKEND_URL || 'http://backend:3001';
@@ -56,14 +57,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, grade, school, phone, userEmail, userName, userPhone } = body;
 
-    if (!name || !grade) {
+    // Validate request body with Zod
+    const validation = CreateStudentDtoSchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { error: '학생명과 학년은 필수입니다.' },
+        { error: formatZodError(validation.error) },
         { status: 400 }
       );
     }
+
+    const { name, grade, school, phone, userEmail, userName, userPhone } = validation.data;
 
     // 학교명은 전달된 그대로 사용 (초/중/고 접미사 미부착)
     const finalSchool = school || '';

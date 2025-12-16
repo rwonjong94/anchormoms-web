@@ -3,25 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import StudentInfoSection from '@/components/admin/StudentInfoSection';
-
-interface Student {
-  id: string;
-  name: string;
-  grade: number;
-  school?: string;
-  phone?: string;
-  userId?: string;
-  createdAt: string;
-  updatedAt: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    googleId?: string;
-    kakaoId?: string;
-  };
-}
+import { type Student, StudentSchema } from '@/dto';
 
 interface ExamInfo {
   id: string;

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { CreateClassDtoSchema, formatZodError } from '@/dto';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://backend:3001';
 
@@ -42,13 +43,22 @@ export async function POST(request: NextRequest) {
     const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
     const body = await request.json();
 
+    // Validate request body with Zod
+    const validation = CreateClassDtoSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: formatZodError(validation.error) },
+        { status: 400 }
+      );
+    }
+
     const response = await fetch(`${BACKEND_URL}/api/classes`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`,
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(validation.data),
     });
 
     if (!response.ok) {

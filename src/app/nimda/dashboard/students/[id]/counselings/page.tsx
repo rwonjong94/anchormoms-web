@@ -8,25 +8,7 @@ import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
-
-interface Student {
-  id: string;
-  name: string;
-  grade: number;
-  school?: string;
-  phone?: string;
-  userId?: string;
-  createdAt: string;
-  updatedAt: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    phone?: string;
-    googleId?: string;
-    kakaoId?: string;
-  };
-}
+import { type Student, StudentSchema } from '@/dto';
 
 interface CounselingLog {
   id: string;

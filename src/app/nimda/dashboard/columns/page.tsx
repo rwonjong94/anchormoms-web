@@ -4,21 +4,25 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import AdminLayout from '@/components/admin/AdminLayout';
+import { z } from 'zod';
 
-interface Column {
-  id: string;
-  title: string;
-  subtitle: string | null;
-  category: string;
-  viewCount: number;
-  isPublished: boolean;
-  createdAt: string;
-  updatedAt: string;
-  author: {
-    name: string;
-    email: string;
-  };
-}
+// Column 스키마 정의
+const ColumnSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  subtitle: z.string().nullable(),
+  category: z.string(),
+  viewCount: z.number(),
+  isPublished: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  author: z.object({
+    name: z.string(),
+    email: z.string(),
+  }),
+});
+
+type Column = z.infer<typeof ColumnSchema>;
 
 interface FilterOptions {
   categories: string[];

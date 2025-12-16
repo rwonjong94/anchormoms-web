@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { AdminLoginDtoSchema, formatZodError } from '@/dto';
 
 // Admin 로그인 - Backend API로 프록시
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
+    // Validate request body with Zod
+    const validation = AdminLoginDtoSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: formatZodError(validation.error) },
+        { status: 400 }
+      );
+    }
 
     // Backend API로 요청 전달
     const response = await fetch(`${process.env.BACKEND_URL}/api/auth/admin/login`, {
@@ -11,7 +21,7 @@ export async function POST(request: NextRequest) {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(validation.data),
     });
 
     const data = await response.json();

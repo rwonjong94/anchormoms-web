@@ -2,28 +2,25 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { getApiUrl } from '@/utils/api';
+import { z } from 'zod';
+import { type Student, StudentSchema } from '@/dto';
 
-interface Student {
-  id: string;
-  name: string;
-  grade: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// AuthContext용 User 스키마 (일반 사용자용)
+const AuthUserSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  name: z.string(),
+  phone: z.string().optional(),
+  profileImage: z.string().optional(),
+  subscription: z.string().optional(),
+  hasStudents: z.boolean().optional(),
+  students: z.array(StudentSchema).optional(),
+});
 
-interface User {
-  id: string;
-  email: string;
-  name: string;
-  phone?: string;
-  profileImage?: string;
-  subscription?: string;
-  hasStudents?: boolean;
-  students?: Student[];
-}
+type AuthUser = z.infer<typeof AuthUserSchema>;
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   selectedStudent: Student | null;
@@ -36,9 +33,12 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// 학생 목록 응답 검증용 스키마
+const StudentsArraySchema = z.array(StudentSchema);
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [mounted, setMounted] = useState(false);
@@ -54,9 +54,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${token}`,
         },
       });
-      
+
       if (response.ok) {
-        return await response.json();
+        const data = await response.json();
+        // Validate response with Zod schema
+        const validation = StudentsArraySchema.safeParse(data);
+        if (validation.success) {
+          return validation.data;
+        } else {
+          console.error('[AuthContext] Invalid students response:', validation.error);
+          return [];
+        }
       }
     } catch (error) {
       console.error('자녀 정보 조회 실패:', error);
@@ -90,15 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             Authorization: `Bearer ${token}`,
           },
         });
-        
+
         if (!res.ok) {
           throw new Error('사용자 정보를 가져오는데 실패했습니다');
         }
-        
+
         const data = await res.json();
         const students = await fetchStudents(token);
-        
-        setUser({
+
+        const userData: AuthUser = {
           id: data.id,
           email: data.email,
           name: data.name,
@@ -107,7 +115,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           subscription: data.subscription,
           hasStudents: students.length > 0,
           students: students,
-        });
+        };
+
+        // Validate user data
+        const validation = AuthUserSchema.safeParse(userData);
+        if (validation.success) {
+          setUser(validation.data);
+        } else {
+          console.error('[AuthContext] Invalid user data:', validation.error);
+        }
       } catch (error) {
         console.error('사용자 정보 새로고침 실패:', error);
       }

@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-
-interface AdminUser {
-  username: string;
-  role: string;
-}
+import {
+  type AdminUser,
+  type AdminLoginResponse,
+  AdminLoginResponseSchema,
+  AdminLoginDtoSchema,
+  formatZodError,
+} from '@/dto';
 
 export function useAdminAuth() {
   const [user, setUser] = useState<AdminUser | null>(null);
@@ -83,6 +85,12 @@ export function useAdminAuth() {
 
   const login = async (username: string, password: string) => {
     try {
+      // Validate input with DTO schema
+      const inputValidation = AdminLoginDtoSchema.safeParse({ username, password });
+      if (!inputValidation.success) {
+        return { success: false, error: formatZodError(inputValidation.error) };
+      }
+
       const response = await fetch('/api/nimda/auth', {
         method: 'POST',
         headers: {
@@ -93,16 +101,25 @@ export function useAdminAuth() {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('adminToken', data.accessToken);
-        setUser(data.user);
+
+        // Validate response with DTO schema
+        const validation = AdminLoginResponseSchema.safeParse(data);
+        if (!validation.success) {
+          console.error('[useAdminAuth] Invalid login response:', validation.error);
+          return { success: false, error: '서버 응답 형식이 올바르지 않습니다.' };
+        }
+
+        const validData = validation.data;
+        localStorage.setItem('adminToken', validData.accessToken);
+        setUser(validData.user);
         setIsAuthenticated(true);
-        
+
         // 로그인 성공 시 검증 캐시 저장
         sessionStorage.setItem(VALIDATION_CACHE_KEY, JSON.stringify({
-          user: data.user,
+          user: validData.user,
           timestamp: Date.now()
         }));
-        
+
         return { success: true };
       } else {
         const data = await response.json();
