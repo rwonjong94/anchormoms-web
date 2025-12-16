@@ -93,7 +93,7 @@ export function useAdminAuth() {
 
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('adminToken', data.token);
+        localStorage.setItem('adminToken', data.accessToken);
         setUser(data.user);
         setIsAuthenticated(true);
         
