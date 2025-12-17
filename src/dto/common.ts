@@ -4,8 +4,8 @@ import { z } from 'zod';
 // Common Schemas
 // ============================================
 
-// UUID 스키마
-export const UUIDSchema = z.string().uuid();
+// UUID 스키마 (빈 문자열도 허용 - 폼에서 선택하지 않은 경우)
+export const UUIDSchema = z.string().uuid().or(z.literal(''));
 
 // 페이지네이션 요청
 export const PaginationRequestSchema = z.object({
