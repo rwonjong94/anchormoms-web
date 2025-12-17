@@ -48,6 +48,7 @@ export default function CounselingsManagePage() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
+      params.append('limit', '500');
 
       if (studentFilter) params.append('studentName', studentFilter);
       if (parentFilter) params.append('parentName', parentFilter);
