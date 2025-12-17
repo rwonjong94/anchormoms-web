@@ -62,7 +62,10 @@ export const PhoneSchema = z
   .optional();
 
 // 이메일 스키마
-export const EmailSchema = z.string().email('올바른 이메일 형식이 아닙니다');
+export const EmailSchema = z
+  .string()
+  .email('올바른 이메일 형식이 아닙니다')
+  .or(z.literal(''));
 
 // 학년 스키마 (초등학교 1-6학년)
 export const GradeSchema = z.coerce.number().int().min(1).max(6);
