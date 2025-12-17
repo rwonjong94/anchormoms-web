@@ -50,6 +50,11 @@ export default function ClassesManagePage() {
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('');
   const [apiAvailable, setApiAvailable] = useState(true);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  // 학생 검색 및 빠른 추가
+  const [studentSearchTerm, setStudentSearchTerm] = useState('');
+  const [showQuickAddStudent, setShowQuickAddStudent] = useState(false);
+  const [quickAddForm, setQuickAddForm] = useState({ name: '', grade: 1, school: '' });
+  const [quickAddLoading, setQuickAddLoading] = useState(false);
   const [newClass, setNewClass] = useState<NewClassForm>({
     name: '',
     description: '',
@@ -270,6 +275,10 @@ export default function ClassesManagePage() {
       studentIds: []
     });
     setEditingClass(null);
+    // 학생 검색 및 빠른 추가 상태 초기화
+    setStudentSearchTerm('');
+    setShowQuickAddStudent(false);
+    setQuickAddForm({ name: '', grade: 1, school: '' });
   };
 
   const addScheduleEntry = () => {
@@ -398,6 +407,58 @@ export default function ClassesManagePage() {
         ? prev.studentIds.filter(id => id !== studentId)
         : [...prev.studentIds, studentId]
     }));
+  };
+
+  // 학생 검색 필터링
+  const filteredStudents = allStudents.filter(student => {
+    const term = studentSearchTerm.toLowerCase();
+    return student.name.toLowerCase().includes(term) ||
+           student.school?.toLowerCase().includes(term) ||
+           student.user?.name?.toLowerCase().includes(term);
+  });
+
+  // 학생 빠른 추가
+  const handleQuickAddStudent = async () => {
+    if (!quickAddForm.name.trim()) {
+      alert('학생 이름을 입력해주세요.');
+      return;
+    }
+    setQuickAddLoading(true);
+    try {
+      const token = localStorage.getItem('adminToken');
+      const response = await fetch('/api/nimda/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: quickAddForm.name,
+          grade: quickAddForm.grade,
+          school: quickAddForm.school || '',
+        }),
+      });
+      if (response.ok) {
+        const newStudent = await response.json();
+        // 학생 목록에 추가하고 자동 선택
+        setAllStudents(prev => [newStudent, ...prev]);
+        setNewClass(prev => ({
+          ...prev,
+          studentIds: [...prev.studentIds, newStudent.id]
+        }));
+        // 폼 초기화
+        setQuickAddForm({ name: '', grade: 1, school: '' });
+        setShowQuickAddStudent(false);
+      } else {
+        const error = await response.json();
+        alert(error.message || '학생 추가에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('학생 빠른 추가 오류:', error);
+      alert('학생 추가 중 오류가 발생했습니다.');
+    } finally {
+      setQuickAddLoading(false);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -877,15 +938,71 @@ export default function ClassesManagePage() {
 
                   {/* 수강 학생 선택 */}
                   <div>
-                    <label className="block text-sm font-medium text-body mb-2">수강 학생 선택</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-medium text-body">수강 학생 선택</label>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAddStudent(!showQuickAddStudent)}
+                        className="text-xs text-indigo-600 hover:text-indigo-800"
+                      >
+                        {showQuickAddStudent ? '취소' : '+ 학생 빠른 추가'}
+                      </button>
+                    </div>
+
+                    {/* 학생 빠른 추가 폼 */}
+                    {showQuickAddStudent && (
+                      <div className="mb-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-md border border-indigo-200 dark:border-indigo-800">
+                        <div className="grid grid-cols-3 gap-2 mb-2">
+                          <input
+                            type="text"
+                            placeholder="학생명 *"
+                            value={quickAddForm.name}
+                            onChange={(e) => setQuickAddForm(prev => ({ ...prev, name: e.target.value }))}
+                            className="px-2 py-1 text-sm border border-input rounded bg-card text-title"
+                          />
+                          <select
+                            value={quickAddForm.grade}
+                            onChange={(e) => setQuickAddForm(prev => ({ ...prev, grade: Number(e.target.value) }))}
+                            className="px-2 py-1 text-sm border border-input rounded bg-card text-title"
+                          >
+                            {[1, 2, 3, 4, 5, 6].map(g => <option key={g} value={g}>{g}학년</option>)}
+                          </select>
+                          <input
+                            type="text"
+                            placeholder="학교"
+                            value={quickAddForm.school}
+                            onChange={(e) => setQuickAddForm(prev => ({ ...prev, school: e.target.value }))}
+                            className="px-2 py-1 text-sm border border-input rounded bg-card text-title"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleQuickAddStudent}
+                          disabled={quickAddLoading || !quickAddForm.name.trim()}
+                          className="w-full px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-400"
+                        >
+                          {quickAddLoading ? '추가 중...' : '추가 후 선택'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* 학생 검색 */}
+                    <input
+                      type="text"
+                      placeholder="학생 이름, 학교, 부모명으로 검색..."
+                      value={studentSearchTerm}
+                      onChange={(e) => setStudentSearchTerm(e.target.value)}
+                      className="w-full px-3 py-2 mb-2 border border-input rounded-md bg-card text-title text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+
                     <div className="max-h-40 overflow-y-auto border border-input rounded-md p-3 bg-card">
-                      {allStudents.length === 0 ? (
+                      {filteredStudents.length === 0 ? (
                         <div className="text-center text-muted py-4">
-                          등록된 학생이 없습니다.
+                          {studentSearchTerm ? '검색 결과가 없습니다.' : '등록된 학생이 없습니다.'}
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          {allStudents.map((student) => (
+                          {filteredStudents.map((student) => (
                             <label key={student.id} className="flex items-center space-x-3 p-2 hover:bg-hover rounded cursor-pointer">
                               <input
                                 type="checkbox"
@@ -908,6 +1025,7 @@ export default function ClassesManagePage() {
                     </div>
                     <div className="text-sm text-body mt-2">
                       선택된 학생: {newClass.studentIds.length}명
+                      {studentSearchTerm && ` (검색 결과: ${filteredStudents.length}명)`}
                     </div>
                   </div>
                 </div>
