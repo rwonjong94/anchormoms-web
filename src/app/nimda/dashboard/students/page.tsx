@@ -80,7 +80,7 @@ export default function StudentsManagementPage() {
   const fetchStudents = useCallback(async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const response = await fetch('/api/nimda/students', {
+      const response = await fetch('/api/nimda/students?page=1&limit=200', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
