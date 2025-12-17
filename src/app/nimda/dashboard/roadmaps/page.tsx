@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import AdminLayout from '@/components/admin/AdminLayout';
 import RoadmapGrid from '@/components/admin/RoadmapGrid';
 
 interface Student {
@@ -215,7 +216,7 @@ export default function RoadmapsManagementPage() {
   const selectedStudent = studentsInClass.find(s => s.id === selectedStudentId);
 
   return (
-    <div className="min-h-screen bg-page">
+    <AdminLayout>
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6">
@@ -457,6 +458,6 @@ export default function RoadmapsManagementPage() {
           </div>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 }
