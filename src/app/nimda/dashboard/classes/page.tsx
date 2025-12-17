@@ -409,13 +409,21 @@ export default function ClassesManagePage() {
     }));
   };
 
-  // 학생 검색 필터링
-  const filteredStudents = allStudents.filter(student => {
-    const term = studentSearchTerm.toLowerCase();
-    return student.name.toLowerCase().includes(term) ||
-           student.school?.toLowerCase().includes(term) ||
-           student.user?.name?.toLowerCase().includes(term);
-  });
+  // 학생 검색 필터링 (선택된 학생 먼저 표시)
+  const filteredStudents = allStudents
+    .filter(student => {
+      const term = studentSearchTerm.toLowerCase();
+      return student.name.toLowerCase().includes(term) ||
+             student.school?.toLowerCase().includes(term) ||
+             student.user?.name?.toLowerCase().includes(term);
+    })
+    .sort((a, b) => {
+      const aSelected = newClass.studentIds.includes(a.id);
+      const bSelected = newClass.studentIds.includes(b.id);
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      return 0;
+    });
 
   // 학생 빠른 추가
   const handleQuickAddStudent = async () => {
@@ -1002,24 +1010,35 @@ export default function ClassesManagePage() {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          {filteredStudents.map((student) => (
-                            <label key={student.id} className="flex items-center space-x-3 p-2 hover:bg-hover rounded cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={newClass.studentIds.includes(student.id)}
-                                onChange={() => handleStudentToggle(student.id)}
-                                className="form-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-input rounded"
-                              />
-                              <div className="flex-1">
-                                <div className="text-sm font-medium text-title">
-                                  {student.name} ({student.grade}학년)
+                          {filteredStudents.map((student) => {
+                            const isSelected = newClass.studentIds.includes(student.id);
+                            return (
+                              <label
+                                key={student.id}
+                                className={`flex items-center space-x-3 p-2 rounded cursor-pointer transition-colors ${
+                                  isSelected
+                                    ? 'bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-700'
+                                    : 'hover:bg-hover'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => handleStudentToggle(student.id)}
+                                  className="form-checkbox h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-input rounded"
+                                />
+                                <div className="flex-1">
+                                  <div className="text-sm font-medium text-title">
+                                    {student.name} ({student.grade}학년)
+                                    {isSelected && <span className="ml-2 text-xs text-indigo-600">✓ 수강중</span>}
+                                  </div>
+                                  <div className="text-xs text-muted">
+                                    {student.school} | 부모: {student.user?.name || '미등록'}
+                                  </div>
                                 </div>
-                                <div className="text-xs text-muted">
-                                  {student.school} | 부모: {student.user?.name || '미등록'}
-                                </div>
-                              </div>
-                            </label>
-                          ))}
+                              </label>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

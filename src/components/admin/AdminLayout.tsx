@@ -24,6 +24,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     if (pathname.includes('/counselings')) return 'counselings';
     if (pathname.includes('/columns')) return 'columns';
     if (pathname.includes('/stores')) return 'stores';
+    if (pathname.includes('/schedules')) return 'schedules';
+    if (pathname.includes('/roadmaps')) return 'roadmaps';
     if (pathname.includes('/students')) return 'students';
     if (pathname.includes('/problems')) return 'problems';
     return 'students';
@@ -167,6 +169,28 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               }`}
             >
               <span className="mr-1">📦</span> 자료 관리
+            </Link>
+            <Link
+              href="/nimda/dashboard/schedules"
+              prefetch
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'schedules'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-muted hover:text-body hover:border-default'
+              }`}
+            >
+              <span className="mr-1">📅</span> 시간표 관리
+            </Link>
+            <Link
+              href="/nimda/dashboard/roadmaps"
+              prefetch
+              className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'roadmaps'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-muted hover:text-body hover:border-default'
+              }`}
+            >
+              <span className="mr-1">🗺️</span> 로드맵 관리
             </Link>
           </nav>
         </div>
