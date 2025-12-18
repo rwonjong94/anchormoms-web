@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AdminLayout from '@/components/admin/AdminLayout';
+import ClassLogCalendar from '@/components/admin/ClassLogCalendar';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import {
   type Student,
@@ -336,6 +337,25 @@ export default function ClassesManagePage() {
       notice: log.notice || ''
     });
     setShowLogModal(true);
+  };
+
+  // 달력에서 수업 일지 클릭 시 호출
+  const handleCalendarLogClick = (classId: string, date: string, existingLog?: ClassLog) => {
+    if (existingLog) {
+      // 기존 일지가 있으면 수정 모드
+      handleEditLog(existingLog);
+    } else {
+      // 기존 일지가 없으면 새로 생성 모드
+      setEditingLog(null);
+      setNewLog({
+        classLectureId: classId,
+        date: date,
+        content: '',
+        homework: '',
+        notice: ''
+      });
+      setShowLogModal(true);
+    }
   };
 
   const handleUpdateLog = async () => {
@@ -690,137 +710,18 @@ export default function ClassesManagePage() {
                 </div>
               </div>
 
-              {/* 수업 일지 목록 */}
+              {/* 수업 일지 캘린더 */}
               {logsLoading ? (
                 <div className="flex justify-center py-12">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
                 </div>
-              ) : classLogs.length === 0 ? (
-                <div className="text-center py-12 bg-card rounded-lg shadow-sm border border-default">
-                  <svg className="w-24 h-24 text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <h3 className="text-lg font-medium text-title mb-2">수업 일지가 없습니다</h3>
-                  <p className="text-body mb-4">
-                    {selectedClassFilter ? '선택한 수업의 일지가 없습니다.' : '첫 번째 수업 일지를 추가해보세요.'}
-                  </p>
-                  <button
-                    onClick={() => setShowLogModal(true)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                  >
-                    수업 일지 추가
-                  </button>
-                </div>
               ) : (
-                <div className="space-y-4">
-                  {classLogs.map((log) => (
-                    <div key={log.id} className="bg-card rounded-lg shadow-sm border border-default overflow-hidden">
-                      {/* 클릭 가능한 헤더 */}
-                      <div 
-                        className="p-6 cursor-pointer hover:bg-hover transition-colors"
-                        onClick={() => setExpandedLogId(expandedLogId === log.id ? null : log.id)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-3">
-                              <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <div>
-                                <h3 className="text-lg font-semibold text-title">{log.classLecture.name}</h3>
-                                <div className="flex items-center space-x-2 mt-1">
-                                  <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full">
-                                    {formatSchedule(log.classLecture.schedule)}
-                                  </span>
-                                  <span className="text-sm text-muted">
-                                    수업일: {new Date(log.date).toLocaleDateString('ko-KR', {
-                                      year: 'numeric',
-                                      month: 'short',
-                                      day: 'numeric'
-                                    })}
-                                  </span>
-                                  <span className="text-xs text-muted">
-                                    수강생: {log.classLecture.students.length}명
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center space-x-4">
-                            {/* 관리 버튼들 */}
-                            <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                onClick={() => handleEditLog(log)}
-                                className="px-3 py-1 text-sm bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-md transition-colors"
-                              >
-                                수정
-                              </button>
-                              <button
-                                onClick={() => handleDeleteLog(log.id, log.title || '수업 일지')}
-                                className="px-3 py-1 text-sm bg-red-50 hover:bg-red-100 text-red-700 rounded-md transition-colors"
-                              >
-                                삭제
-                              </button>
-                            </div>
-                            
-                            {/* 펼치기/접기 아이콘 */}
-                            <svg 
-                              className={`w-5 h-5 text-muted transition-transform ${
-                                expandedLogId === log.id ? 'transform rotate-180' : ''
-                              }`}
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24"
-                            >
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* 펼쳐지는 내용 */}
-                      {expandedLogId === log.id && (
-                        <div className="px-6 pb-6 border-t border-default">
-                          <div className="pt-4 space-y-4">
-                            {/* 수업 내용 */}
-                            <div>
-                              <h4 className="text-sm font-medium text-title mb-2">📚 수업 내용</h4>
-                              <div className="text-sm text-body whitespace-pre-wrap leading-relaxed bg-hover p-3 rounded-md">
-                                {log.content}
-                              </div>
-                            </div>
-                            
-                            {/* 과제 (있는 경우만 표시) */}
-                            {log.homework && (
-                              <div>
-                                <h4 className="text-sm font-medium text-title mb-2">📝 과제</h4>
-                                <div className="text-sm text-body whitespace-pre-wrap leading-relaxed bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md border border-yellow-200 dark:border-yellow-800">
-                                  {log.homework}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* 안내 사항 (있는 경우만 표시) */}
-                            {log.notice && (
-                              <div>
-                                <h4 className="text-sm font-medium text-title mb-2">📌 안내 사항</h4>
-                                <div className="text-sm text-body whitespace-pre-wrap leading-relaxed bg-blue-50 dark:bg-blue-900/20 p-3 rounded-md border border-blue-200 dark:border-blue-800">
-                                  {log.notice}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* 작성일 */}
-                            <div className="pt-2 text-xs text-muted text-right">
-                              작성일: {formatDate(log.createdAt)}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <ClassLogCalendar
+                  classes={classes}
+                  classLogs={classLogs}
+                  selectedClassFilter={selectedClassFilter}
+                  onLogClick={handleCalendarLogClick}
+                />
               )}
             </div>
           )}
