@@ -135,14 +135,16 @@ export default function ClassLogCalendar({
         // 개강일이 없으면 해당 수업은 달력에 표시하지 않음
         if (!cls.startDate) return;
 
-        // 개강일 이전의 날짜는 표시하지 않음
-        const startDateObj = new Date(cls.startDate);
-        if (date < startDateObj) return;
+        // 날짜만 비교하기 위해 YYYY-MM-DD 문자열로 변환 (타임존 이슈 방지)
+        const startDateStr = cls.startDate.substring(0, 10);
+
+        // 개강일 이전의 날짜는 표시하지 않음 (문자열 비교)
+        if (dateStr < startDateStr) return;
 
         // 종강일이 있고, 종강일 이후의 날짜는 표시하지 않음
         if (cls.endDate) {
-          const endDateObj = new Date(cls.endDate);
-          if (date > endDateObj) return;
+          const endDateStr = cls.endDate.substring(0, 10);
+          if (dateStr > endDateStr) return;
         }
 
         const schedules = parseSchedule(cls.schedule);
