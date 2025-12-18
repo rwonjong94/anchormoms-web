@@ -55,6 +55,7 @@ export default function ClassesManagePage() {
   const [selectedClassFilter, setSelectedClassFilter] = useState<string>('');
   const [apiAvailable, setApiAvailable] = useState(true);
   const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
+  const [calendarDate, setCalendarDate] = useState<Date>(new Date()); // 달력 현재 월 유지용
   // 학생 검색 및 빠른 추가
   const [studentSearchTerm, setStudentSearchTerm] = useState('');
   const [showQuickAddStudent, setShowQuickAddStudent] = useState(false);
@@ -742,6 +743,8 @@ export default function ClassesManagePage() {
                   classLogs={classLogs}
                   selectedClassFilter={selectedClassFilter}
                   onLogClick={handleCalendarLogClick}
+                  currentDate={calendarDate}
+                  onDateChange={setCalendarDate}
                 />
               )}
             </div>

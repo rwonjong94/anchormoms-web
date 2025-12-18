@@ -20,6 +20,8 @@ interface ClassLogCalendarProps {
   classLogs: ClassLog[];
   selectedClassFilter: string;
   onLogClick: (classId: string, date: string, existingLog?: ClassLog) => void;
+  currentDate?: Date;
+  onDateChange?: (date: Date) => void;
 }
 
 // 요일 매핑
@@ -74,8 +76,20 @@ export default function ClassLogCalendar({
   classLogs,
   selectedClassFilter,
   onLogClick,
+  currentDate: controlledDate,
+  onDateChange,
 }: ClassLogCalendarProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [internalDate, setInternalDate] = useState(new Date());
+
+  // 외부에서 제어하는 경우 외부 상태 사용, 아니면 내부 상태 사용
+  const currentDate = controlledDate ?? internalDate;
+  const setCurrentDate = (date: Date) => {
+    if (onDateChange) {
+      onDateChange(date);
+    } else {
+      setInternalDate(date);
+    }
+  };
 
   // 표시할 수업들
   const filteredClasses = useMemo(() => {
@@ -172,11 +186,11 @@ export default function ClassLogCalendar({
   }, [calendarDays, filteredClasses, classLogs]);
 
   const goToPrevMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
   };
 
   const goToNextMonth = () => {
-    setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
   const goToToday = () => {
