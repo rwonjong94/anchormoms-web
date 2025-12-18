@@ -191,11 +191,80 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
   // 선택된 블록 (키보드 삭제용)
   const [selectedBlock, setSelectedBlock] = useState<{ day: DayKey; id: string } | null>(null);
 
+  // Undo/Redo 히스토리
+  const [history, setHistory] = useState<WeeklySchedule[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const isUndoRedoRef = useRef(false);
+
+  // 클립보드 (복사된 블록)
+  const [clipboard, setClipboard] = useState<ScheduleBlock | null>(null);
+
+  // 히스토리에 현재 상태 저장
+  const saveToHistory = useCallback((state: WeeklySchedule) => {
+    if (isUndoRedoRef.current) {
+      isUndoRedoRef.current = false;
+      return;
+    }
+    setHistory((prev) => {
+      // 현재 인덱스 이후의 히스토리 삭제 (새 분기)
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push(state);
+      // 최대 50개까지만 유지
+      if (newHistory.length > 50) {
+        newHistory.shift();
+        return newHistory;
+      }
+      return newHistory;
+    });
+    setHistoryIndex((prev) => Math.min(prev + 1, 49));
+  }, [historyIndex]);
+
+  // Undo
+  const undo = useCallback(() => {
+    if (historyIndex > 0) {
+      isUndoRedoRef.current = true;
+      const prevState = history[historyIndex - 1];
+      setHistoryIndex((prev) => prev - 1);
+      onChange(prevState);
+    }
+  }, [history, historyIndex, onChange]);
+
+  // Redo
+  const redo = useCallback(() => {
+    if (historyIndex < history.length - 1) {
+      isUndoRedoRef.current = true;
+      const nextState = history[historyIndex + 1];
+      setHistoryIndex((prev) => prev + 1);
+      onChange(nextState);
+    }
+  }, [history, historyIndex, onChange]);
+
+  // 복사
+  const copyBlock = useCallback(() => {
+    if (!selectedBlock) return;
+    const block = schedule[selectedBlock.day].find((b) => b.id === selectedBlock.id);
+    if (block) {
+      setClipboard({ ...block });
+    }
+  }, [selectedBlock, schedule]);
+
+  // 붙여넣기
+  const pasteBlock = useCallback((targetDay?: DayKey) => {
+    if (!clipboard) return;
+    const day = targetDay || selectedBlock?.day || 'mon';
+    const newId = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
+    const next: WeeklySchedule = { ...schedule, [day]: [...schedule[day]] };
+    next[day].push({ ...clipboard, id: newId });
+    saveToHistory(schedule);
+    onChange(next);
+  }, [clipboard, selectedBlock, schedule, onChange, saveToHistory]);
+
   const commit = useCallback(
     (next: WeeklySchedule) => {
+      saveToHistory(schedule);
       onChange(next);
     },
-    [onChange]
+    [onChange, schedule, saveToHistory]
   );
 
   const updateBlock = useCallback(
@@ -251,6 +320,9 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
   // 키보드 단축키 핸들러
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 입력 필드에서는 Undo/Redo/Copy/Paste 외에는 동작 안 함
+      const isInputField = (e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA';
+
       // 모달이 열려있을 때 Escape로 닫기
       if (e.key === 'Escape') {
         if (editModal.open) {
@@ -264,12 +336,37 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
         return;
       }
 
+      // Ctrl+Z: Undo
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey && !editModal.open) {
+        e.preventDefault();
+        undo();
+        return;
+      }
+
+      // Ctrl+Shift+Z 또는 Ctrl+Y: Redo
+      if ((e.ctrlKey || e.metaKey) && ((e.key === 'z' && e.shiftKey) || e.key === 'y') && !editModal.open) {
+        e.preventDefault();
+        redo();
+        return;
+      }
+
+      // Ctrl+C: 복사
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && selectedBlock && !editModal.open && !isInputField) {
+        e.preventDefault();
+        copyBlock();
+        return;
+      }
+
+      // Ctrl+V: 붙여넣기
+      if ((e.ctrlKey || e.metaKey) && e.key === 'v' && clipboard && !editModal.open && !isInputField) {
+        e.preventDefault();
+        pasteBlock();
+        return;
+      }
+
       // Delete 또는 Backspace로 선택된 블록 삭제
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedBlock && !editModal.open) {
-        // 입력 필드에서는 동작 안 함
-        if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
-          return;
-        }
+        if (isInputField) return;
         removeBlock(selectedBlock.day, selectedBlock.id);
         setSelectedBlock(null);
         e.preventDefault();
@@ -278,7 +375,7 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [editModal.open, selectedBlock, removeBlock]);
+  }, [editModal.open, selectedBlock, removeBlock, undo, redo, copyBlock, pasteBlock, clipboard]);
 
   const getDayFromClientX = (clientX: number): DayKey | null => {
     const grid = gridRef.current;
@@ -483,6 +580,90 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
 
   return (
     <div className="w-full">
+      {/* 툴바 */}
+      <div className="flex items-center justify-between mb-3 pb-3 border-b border-default">
+        <div className="flex items-center gap-2">
+          {/* Undo/Redo 버튼 */}
+          <button
+            type="button"
+            onClick={undo}
+            disabled={historyIndex <= 0}
+            className={`px-2 py-1 text-sm rounded border transition-colors ${
+              historyIndex > 0
+                ? 'border-default hover:bg-muted/50 text-title'
+                : 'border-default/50 text-muted cursor-not-allowed'
+            }`}
+            title="되돌리기 (Ctrl+Z)"
+          >
+            ↩ 되돌리기
+          </button>
+          <button
+            type="button"
+            onClick={redo}
+            disabled={historyIndex >= history.length - 1}
+            className={`px-2 py-1 text-sm rounded border transition-colors ${
+              historyIndex < history.length - 1
+                ? 'border-default hover:bg-muted/50 text-title'
+                : 'border-default/50 text-muted cursor-not-allowed'
+            }`}
+            title="다시 실행 (Ctrl+Shift+Z)"
+          >
+            ↪ 다시 실행
+          </button>
+
+          {/* 구분선 */}
+          <div className="w-px h-6 bg-default mx-1"></div>
+
+          {/* 복사/붙여넣기 버튼 */}
+          <button
+            type="button"
+            onClick={copyBlock}
+            disabled={!selectedBlock}
+            className={`px-2 py-1 text-sm rounded border transition-colors ${
+              selectedBlock
+                ? 'border-default hover:bg-muted/50 text-title'
+                : 'border-default/50 text-muted cursor-not-allowed'
+            }`}
+            title="복사 (Ctrl+C)"
+          >
+            📋 복사
+          </button>
+          <button
+            type="button"
+            onClick={() => pasteBlock()}
+            disabled={!clipboard}
+            className={`px-2 py-1 text-sm rounded border transition-colors ${
+              clipboard
+                ? 'border-default hover:bg-muted/50 text-title'
+                : 'border-default/50 text-muted cursor-not-allowed'
+            }`}
+            title="붙여넣기 (Ctrl+V)"
+          >
+            📄 붙여넣기
+          </button>
+        </div>
+
+        {/* 상태 표시 */}
+        <div className="flex items-center gap-3 text-xs text-muted">
+          {clipboard && (
+            <span className="flex items-center gap-1 px-2 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 rounded">
+              <span className="w-3 h-3 rounded" style={{ backgroundColor: clipboard.color }}></span>
+              복사됨: {clipboard.academyName || clipboard.subject || '(이름 없음)'}
+            </span>
+          )}
+          {selectedBlock && (
+            <span className="px-2 py-1 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 rounded">
+              선택됨
+            </span>
+          )}
+          {history.length > 0 && (
+            <span className="text-muted">
+              히스토리: {historyIndex + 1}/{history.length}
+            </span>
+          )}
+        </div>
+      </div>
+
       {/* 타임라인 헤더 */}
       <div className="grid grid-cols-8 gap-0 mb-2">
         <div className="text-sm text-muted h-6 flex items-center justify-center px-2">시간</div>

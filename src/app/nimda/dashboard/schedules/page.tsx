@@ -280,12 +280,14 @@ export default function SchedulesManagementPage() {
                     <span>• 더블클릭: 수정</span>
                     <span>• 블록 드래그: 이동 (다른 요일로도 가능)</span>
                     <span>• 가장자리 드래그: 시간 조절</span>
-                    <span>• Delete/Backspace: 선택 블록 삭제</span>
-                    <span>• Escape: 선택 해제 / 모달 닫기</span>
                   </div>
-                  <div className="mt-2 text-xs">
-                    <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded border-2 border-dashed border-red-400 bg-red-100"></span> 시간 충돌 표시</span>
-                    <span className="ml-4 inline-flex items-center gap-1"><span className="w-3 h-3 rounded ring-2 ring-yellow-400 bg-blue-400"></span> 선택된 블록</span>
+                  <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+                    <span>• Ctrl+C: 복사</span>
+                    <span>• Ctrl+V: 붙여넣기</span>
+                    <span>• Ctrl+Z: 되돌리기</span>
+                    <span>• Ctrl+Shift+Z: 다시 실행</span>
+                    <span>• Delete/Backspace: 삭제</span>
+                    <span>• Escape: 선택 해제</span>
                   </div>
                 </div>
 
