@@ -38,6 +38,33 @@ const SLOTS = TOTAL_MINUTES / SLOT_MINUTES; // 30
 const ROW_HEIGHT = 22; // 한 칸 높이(px)
 const GRID_HEIGHT = SLOTS * ROW_HEIGHT; // 전체 높이
 
+// 색상 프리셋
+const COLOR_PRESETS = [
+  { color: '#3b82f6', label: '파랑', subjects: ['수학', '수학교과', '사고력'] },
+  { color: '#10b981', label: '초록', subjects: ['영어', '영어회화'] },
+  { color: '#f59e0b', label: '주황', subjects: ['국어', '논술'] },
+  { color: '#ef4444', label: '빨강', subjects: ['과학', '실험'] },
+  { color: '#8b5cf6', label: '보라', subjects: ['예체능', '미술', '음악'] },
+  { color: '#ec4899', label: '핑크', subjects: ['피아노', '바이올린'] },
+  { color: '#06b6d4', label: '청록', subjects: ['코딩', '컴퓨터'] },
+  { color: '#84cc16', label: '연두', subjects: ['태권도', '수영', '체육'] },
+  { color: '#f97316', label: '오렌지', subjects: ['중국어', '일본어'] },
+  { color: '#6366f1', label: '인디고', subjects: ['역사', '사회'] },
+  { color: '#14b8a6', label: '틸', subjects: ['독서', '글쓰기'] },
+  { color: '#a855f7', label: '퍼플', subjects: ['기타'] },
+];
+
+// 과목명으로 색상 자동 추천
+function getRecommendedColor(subject: string): string {
+  const lowerSubject = subject.toLowerCase();
+  for (const preset of COLOR_PRESETS) {
+    if (preset.subjects.some(s => lowerSubject.includes(s.toLowerCase()))) {
+      return preset.color;
+    }
+  }
+  return '#3b82f6'; // 기본 파랑
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
@@ -107,6 +134,8 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
     initialStartMin?: number;
     initialEndMin?: number;
     offsetY?: number;
+    originalDay?: DayKey; // 이동 시작 시 원래 요일
+    currentHoverDay?: DayKey; // 현재 마우스가 위치한 요일
   }>({ type: null, day: null });
 
   const [editModal, setEditModal] = useState<EditModalState>({
@@ -161,6 +190,22 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
     [schedule, commit]
   );
 
+  // 블록을 다른 요일로 이동
+  const moveBlockToDay = useCallback(
+    (fromDay: DayKey, toDay: DayKey, blockId: string, newStartMin: number, newEndMin: number) => {
+      const block = schedule[fromDay].find((b) => b.id === blockId);
+      if (!block) return;
+
+      const next: WeeklySchedule = { ...schedule };
+      // 원래 요일에서 제거
+      next[fromDay] = schedule[fromDay].filter((b) => b.id !== blockId);
+      // 새 요일에 추가
+      next[toDay] = [...schedule[toDay], { ...block, startMin: newStartMin, endMin: newEndMin }];
+      commit(next);
+    },
+    [schedule, commit]
+  );
+
   const getDayFromClientX = (clientX: number): DayKey | null => {
     const grid = gridRef.current;
     if (!grid) return null;
@@ -209,12 +254,27 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
       });
     } else if (dragState.type === 'move' && dragState.day && dragState.blockId) {
       const min = getMinFromClientY(e.clientY);
+      const hoverDay = getDayFromClientX(e.clientX);
       const delta = (min - (dragState.startMin ?? 0));
       const newStart = clamp((dragState.initialStartMin ?? 0) + delta, 0, TOTAL_MINUTES - SLOT_MINUTES);
       const duration = (dragState.initialEndMin ?? 0) - (dragState.initialStartMin ?? 0);
       const newEnd = clamp(newStart + duration, SLOT_MINUTES, TOTAL_MINUTES);
-      updateBlock(dragState.day, dragState.blockId, (b) => ({ ...b, startMin: newStart, endMin: newEnd }));
-      setDragState((s) => ({ ...s, startMin: min }));
+
+      // 요일이 변경된 경우
+      if (hoverDay && hoverDay !== dragState.day) {
+        moveBlockToDay(dragState.day, hoverDay, dragState.blockId, newStart, newEnd);
+        setDragState((s) => ({
+          ...s,
+          day: hoverDay,
+          startMin: min,
+          initialStartMin: newStart,
+          initialEndMin: newEnd,
+        }));
+      } else {
+        // 같은 요일 내 시간만 변경
+        updateBlock(dragState.day, dragState.blockId, (b) => ({ ...b, startMin: newStart, endMin: newEnd }));
+        setDragState((s) => ({ ...s, startMin: min }));
+      }
     } else if ((dragState.type === 'resize-top' || dragState.type === 'resize-bottom') && dragState.day && dragState.blockId) {
       const min = getMinFromClientY(e.clientY);
       if (dragState.type === 'resize-top') {
@@ -480,7 +540,22 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
                 <input
                   className="w-full px-3 py-2 border border-input bg-card text-title rounded"
                   value={editModal.block.subject}
-                  onChange={(e) => setEditModal((m) => ({ ...m, block: { ...m.block!, subject: e.target.value } }))}
+                  onChange={(e) => {
+                    const newSubject = e.target.value;
+                    const recommendedColor = getRecommendedColor(newSubject);
+                    setEditModal((m) => ({
+                      ...m,
+                      block: {
+                        ...m.block!,
+                        subject: newSubject,
+                        // 기본 색상이거나 빈 상태일 때만 자동 변경
+                        color: m.block!.color === '#60a5fa' || m.block!.color === '#3b82f6'
+                          ? recommendedColor
+                          : m.block!.color,
+                      },
+                    }));
+                  }}
+                  placeholder="예: 수학, 영어, 피아노..."
                 />
               </div>
               <div>
@@ -509,14 +584,47 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
                   })}
                 </select>
               </div>
-              <div>
+              <div className="col-span-2">
                 <label className="block text-xs text-muted mb-1">색상</label>
-                <input
-                  type="color"
-                  className="w-full h-[40px] px-2 py-2 border border-input bg-card text-title rounded"
-                  value={editModal.block.color}
-                  onChange={(e) => setEditModal((m) => ({ ...m, block: { ...m.block!, color: e.target.value } }))}
-                />
+                <div className="flex flex-wrap gap-2">
+                  {COLOR_PRESETS.map((preset) => (
+                    <button
+                      key={preset.color}
+                      type="button"
+                      className={`w-8 h-8 rounded-full border-2 transition-all hover:scale-110 ${
+                        editModal.block.color === preset.color
+                          ? 'border-gray-800 dark:border-white ring-2 ring-offset-2 ring-gray-400'
+                          : 'border-transparent'
+                      }`}
+                      style={{ backgroundColor: preset.color }}
+                      onClick={() => setEditModal((m) => ({ ...m, block: { ...m.block!, color: preset.color } }))}
+                      title={`${preset.label} (${preset.subjects.join(', ')})`}
+                    />
+                  ))}
+                  {/* 커스텀 색상 선택 */}
+                  <div className="relative">
+                    <input
+                      type="color"
+                      className="absolute inset-0 w-8 h-8 opacity-0 cursor-pointer"
+                      value={editModal.block.color}
+                      onChange={(e) => setEditModal((m) => ({ ...m, block: { ...m.block!, color: e.target.value } }))}
+                    />
+                    <div
+                      className={`w-8 h-8 rounded-full border-2 border-dashed border-gray-400 flex items-center justify-center text-gray-400 hover:border-gray-600 hover:text-gray-600 ${
+                        !COLOR_PRESETS.some(p => p.color === editModal.block.color) ? 'ring-2 ring-offset-2 ring-gray-400' : ''
+                      }`}
+                      style={!COLOR_PRESETS.some(p => p.color === editModal.block.color) ? { backgroundColor: editModal.block.color } : {}}
+                    >
+                      {COLOR_PRESETS.some(p => p.color === editModal.block.color) && '+'}
+                    </div>
+                  </div>
+                </div>
+                {/* 선택된 색상에 해당하는 과목 힌트 */}
+                {COLOR_PRESETS.find(p => p.color === editModal.block.color) && (
+                  <div className="text-xs text-muted mt-1">
+                    추천 과목: {COLOR_PRESETS.find(p => p.color === editModal.block.color)?.subjects.join(', ')}
+                  </div>
+                )}
               </div>
             </div>
 
