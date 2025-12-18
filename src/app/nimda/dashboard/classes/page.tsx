@@ -22,6 +22,8 @@ interface ClassLecture {
   subject: string;
   grade: number;
   schedule: any;
+  startDate?: string; // 개강일
+  endDate?: string;   // 종강일
   students: Array<{ id: string; name: string; grade: number; school?: string }>;
   createdAt: string;
   updatedAt: string;
@@ -34,11 +36,13 @@ type NewClassForm = {
   subject?: string;
   grade?: number;
   schedule: ScheduleEntry[];
+  startDate?: string; // 개강일
+  endDate?: string;   // 종강일
   studentIds: string[];
 };
 
 export default function ClassesManagePage() {
-  const [activeTab, setActiveTab] = useState<TabType>('수업 관리');
+  const [activeTab, setActiveTab] = useState<TabType>('수업 일지');
   const [classes, setClasses] = useState<ClassLecture[]>([]);
   const [classLogs, setClassLogs] = useState<ClassLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,6 +66,8 @@ export default function ClassesManagePage() {
     subject: '',
     grade: 1,
     schedule: [{ day: '월', start: '', end: '' }],
+    startDate: '',
+    endDate: '',
     studentIds: []
   });
   const [newLog, setNewLog] = useState({
@@ -225,12 +231,25 @@ export default function ClassesManagePage() {
         scheduleEntries = parsed as ScheduleEntry[];
       }
     } catch {}
+
+    // ISO 날짜를 YYYY-MM-DD 형식으로 변환
+    const formatDateForInput = (dateStr?: string) => {
+      if (!dateStr) return '';
+      try {
+        return new Date(dateStr).toISOString().split('T')[0];
+      } catch {
+        return '';
+      }
+    };
+
     setNewClass({
       name: classLecture.name,
       description: classLecture.description,
       subject: classLecture.subject,
       grade: classLecture.grade,
       schedule: scheduleEntries,
+      startDate: formatDateForInput(classLecture.startDate),
+      endDate: formatDateForInput(classLecture.endDate),
       studentIds: classLecture.students.map(s => s.id)
     });
     setShowAddModal(true);
@@ -273,6 +292,8 @@ export default function ClassesManagePage() {
       subject: '',
       grade: 1,
       schedule: [{ day: '월', start: '', end: '' }],
+      startDate: '',
+      endDate: '',
       studentIds: []
     });
     setEditingClass(null);
@@ -580,16 +601,6 @@ export default function ClassesManagePage() {
             <div className="border-b border-default">
               <nav className="-mb-px flex space-x-8">
                 <button
-                  onClick={() => setActiveTab('수업 관리')}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === '수업 관리'
-                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
-                      : 'border-transparent text-muted hover:text-body hover:border-default'
-                  }`}
-                >
-                  수업 목록
-                </button>
-                <button
                   onClick={() => setActiveTab('수업 일지')}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === '수업 일지'
@@ -598,6 +609,16 @@ export default function ClassesManagePage() {
                   }`}
                 >
                   수업 일지
+                </button>
+                <button
+                  onClick={() => setActiveTab('수업 관리')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === '수업 관리'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-muted hover:text-body hover:border-default'
+                  }`}
+                >
+                  수업 목록
                 </button>
               </nav>
             </div>
@@ -842,6 +863,34 @@ export default function ClassesManagePage() {
                           + 시간 추가
                         </button>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* 개강일 / 종강일 */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-body mb-2">
+                        개강일
+                        <span className="text-xs text-muted ml-2">(이후부터 일지 표시)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={newClass.startDate || ''}
+                        onChange={(e) => setNewClass({...newClass, startDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-input bg-card text-title rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-body mb-2">
+                        종강일
+                        <span className="text-xs text-muted ml-2">(이전까지 일지 표시)</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={newClass.endDate || ''}
+                        onChange={(e) => setNewClass({...newClass, endDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-input bg-card text-title rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
                     </div>
                   </div>
 

@@ -10,6 +10,8 @@ interface ClassLecture {
   subject: string;
   grade: number;
   schedule: any;
+  startDate?: string; // 개강일
+  endDate?: string;   // 종강일
   students: Array<{ id: string; name: string; grade: number; school?: string }>;
 }
 
@@ -130,6 +132,19 @@ export default function ClassLogCalendar({
       const entries: Array<{ classInfo: ClassLecture; scheduleEntry: { day: string; start: string; end: string }; log?: ClassLog }> = [];
 
       filteredClasses.forEach(cls => {
+        // 개강일이 없으면 해당 수업은 달력에 표시하지 않음
+        if (!cls.startDate) return;
+
+        // 개강일 이전의 날짜는 표시하지 않음
+        const startDateObj = new Date(cls.startDate);
+        if (date < startDateObj) return;
+
+        // 종강일이 있고, 종강일 이후의 날짜는 표시하지 않음
+        if (cls.endDate) {
+          const endDateObj = new Date(cls.endDate);
+          if (date > endDateObj) return;
+        }
+
         const schedules = parseSchedule(cls.schedule);
         schedules.forEach(sched => {
           if (DAY_MAP[sched.day] === dayOfWeek) {
