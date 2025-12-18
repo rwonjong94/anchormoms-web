@@ -274,7 +274,19 @@ export default function SchedulesManagementPage() {
 
                 {/* Usage Instructions */}
                 <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md text-sm text-blue-700 dark:text-blue-300">
-                  <strong>사용법:</strong> 빈 영역을 드래그하여 새 스케줄 추가 · 블록 더블클릭으로 수정 · 블록 드래그로 이동 · 상하 가장자리 드래그로 시간 조절
+                  <div><strong>사용법:</strong></div>
+                  <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-1">
+                    <span>• 드래그: 새 스케줄 추가</span>
+                    <span>• 더블클릭: 수정</span>
+                    <span>• 블록 드래그: 이동 (다른 요일로도 가능)</span>
+                    <span>• 가장자리 드래그: 시간 조절</span>
+                    <span>• Delete/Backspace: 선택 블록 삭제</span>
+                    <span>• Escape: 선택 해제 / 모달 닫기</span>
+                  </div>
+                  <div className="mt-2 text-xs">
+                    <span className="inline-flex items-center gap-1"><span className="w-3 h-3 rounded border-2 border-dashed border-red-400 bg-red-100"></span> 시간 충돌 표시</span>
+                    <span className="ml-4 inline-flex items-center gap-1"><span className="w-3 h-3 rounded ring-2 ring-yellow-400 bg-blue-400"></span> 선택된 블록</span>
+                  </div>
                 </div>
 
                 {/* Schedule Editor */}

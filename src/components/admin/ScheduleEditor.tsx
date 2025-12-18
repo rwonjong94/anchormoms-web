@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
@@ -63,6 +63,46 @@ function getRecommendedColor(subject: string): string {
     }
   }
   return '#3b82f6'; // 기본 파랑
+}
+
+// 시간 충돌 감지: 같은 요일에 겹치는 블록들을 찾음
+function detectConflicts(blocks: ScheduleBlock[]): Map<string, number> {
+  // 블록 ID -> 충돌 그룹 인덱스 (0부터 시작, 겹치는 블록들끼리 다른 인덱스)
+  const conflictMap = new Map<string, number>();
+
+  // 시작 시간 기준 정렬
+  const sorted = [...blocks].sort((a, b) => a.startMin - b.startMin);
+
+  for (let i = 0; i < sorted.length; i++) {
+    const current = sorted[i];
+    let maxConflictIndex = -1;
+
+    // 이전 블록들과 충돌 확인
+    for (let j = 0; j < i; j++) {
+      const prev = sorted[j];
+      // 시간이 겹치는지 확인
+      if (prev.endMin > current.startMin) {
+        const prevIndex = conflictMap.get(prev.id) ?? 0;
+        maxConflictIndex = Math.max(maxConflictIndex, prevIndex);
+      }
+    }
+
+    conflictMap.set(current.id, maxConflictIndex + 1);
+  }
+
+  return conflictMap;
+}
+
+// 특정 블록과 충돌하는 블록 수 계산
+function countConflicts(blocks: ScheduleBlock[], blockId: string): number {
+  const block = blocks.find(b => b.id === blockId);
+  if (!block) return 0;
+
+  return blocks.filter(b =>
+    b.id !== blockId &&
+    b.startMin < block.endMin &&
+    b.endMin > block.startMin
+  ).length;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -148,6 +188,8 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
   const [selectRange, setSelectRange] = useState<{ day: DayKey | null; startMin: number; endMin: number } | null>(null);
   // 추가 시간(같은 내용으로 요일/시간만 다른 블록들)
   const [extraSlots, setExtraSlots] = useState<Array<{ day: DayKey; startMin: number; endMin: number }>>([]);
+  // 선택된 블록 (키보드 삭제용)
+  const [selectedBlock, setSelectedBlock] = useState<{ day: DayKey; id: string } | null>(null);
 
   const commit = useCallback(
     (next: WeeklySchedule) => {
@@ -206,6 +248,38 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
     [schedule, commit]
   );
 
+  // 키보드 단축키 핸들러
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 모달이 열려있을 때 Escape로 닫기
+      if (e.key === 'Escape') {
+        if (editModal.open) {
+          setEditModal((m) => ({ ...m, open: false }));
+          setExtraSlots([]);
+          e.preventDefault();
+        } else if (selectedBlock) {
+          setSelectedBlock(null);
+          e.preventDefault();
+        }
+        return;
+      }
+
+      // Delete 또는 Backspace로 선택된 블록 삭제
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedBlock && !editModal.open) {
+        // 입력 필드에서는 동작 안 함
+        if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+          return;
+        }
+        removeBlock(selectedBlock.day, selectedBlock.id);
+        setSelectedBlock(null);
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [editModal.open, selectedBlock, removeBlock]);
+
   const getDayFromClientX = (clientX: number): DayKey | null => {
     const grid = gridRef.current;
     if (!grid) return null;
@@ -236,6 +310,8 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
     if (e.button !== 0) return;
     const day = getDayFromClientX(e.clientX);
     if (!day) return;
+    // 빈 영역 클릭 시 선택 해제
+    setSelectedBlock(null);
     const startMin = getMinFromClientY(e.clientY);
     setDragState({ type: 'select', day, startY: e.clientY, startMin });
     setSelectRange({ day, startMin, endMin: startMin + SLOT_MINUTES });
@@ -469,39 +545,81 @@ export default function ScheduleEditor({ value, onChange }: ScheduleEditorProps)
             )}
 
             {/* 스케줄 블록 */}
-            {schedule[d.key].map((b) => {
-              const top = (b.startMin / SLOT_MINUTES) * ROW_HEIGHT;
-              const height = ((b.endMin - b.startMin) / SLOT_MINUTES) * ROW_HEIGHT;
-              return (
-                <div
-                  key={b.id}
-                  className="absolute left-1 right-1 rounded-lg shadow-md border text-xs text-white overflow-hidden ring-1 ring-black/5"
-                  style={{ top, height, backgroundColor: b.color || '#60a5fa', borderColor: b.color || '#60a5fa' }}
-                  onMouseDown={beginMove(d.key, b)}
-                  onDoubleClick={openEdit(d.key, b)}
-                >
-                  <div className="flex items-center justify-between px-2 py-1 bg-black/10">
-                    <span className="truncate">
-                      {b.academyName} {b.subject ? `• ${b.subject}` : ''}
-                    </span>
-                  </div>
-                  <div className="px-2 py-1 bg-black/5">
-                    <div>{minutesToLabel(b.startMin)} ~ {minutesToLabel(b.endMin)}</div>
-                  </div>
-                  {/* 리사이즈 핸들 */}
+            {(() => {
+              const dayBlocks = schedule[d.key];
+              const conflictMap = detectConflicts(dayBlocks);
+              const maxConflict = Math.max(0, ...Array.from(conflictMap.values()));
+              const columnCount = maxConflict + 1;
+
+              return dayBlocks.map((b) => {
+                const top = (b.startMin / SLOT_MINUTES) * ROW_HEIGHT;
+                const height = ((b.endMin - b.startMin) / SLOT_MINUTES) * ROW_HEIGHT;
+                const conflictIndex = conflictMap.get(b.id) ?? 0;
+                const hasConflict = countConflicts(dayBlocks, b.id) > 0;
+                const isSelected = selectedBlock?.day === d.key && selectedBlock?.id === b.id;
+
+                // 충돌 시 블록 너비와 위치 조정
+                const columnWidth = columnCount > 1 ? (100 / columnCount) : 100;
+                const leftOffset = conflictIndex * columnWidth;
+
+                return (
                   <div
-                    className="absolute left-2 right-2 h-1 cursor-n-resize rounded-full bg-white/40 hover:bg-white/70 transition-colors"
-                    style={{ top: 0 }}
-                    onMouseDown={beginResize(d.key, b, 'top')}
-                  />
-                  <div
-                    className="absolute left-2 right-2 h-1 cursor-s-resize rounded-full bg-white/40 hover:bg-white/70 transition-colors"
-                    style={{ bottom: 0 }}
-                    onMouseDown={beginResize(d.key, b, 'bottom')}
-                  />
-                </div>
-              );
-            })}
+                    key={b.id}
+                    className={`absolute rounded-lg shadow-md border text-xs text-white overflow-hidden transition-all ${
+                      isSelected
+                        ? 'ring-2 ring-offset-1 ring-yellow-400 z-20'
+                        : 'ring-1 ring-black/5'
+                    } ${hasConflict ? 'border-dashed' : ''}`}
+                    style={{
+                      top,
+                      height,
+                      backgroundColor: b.color || '#60a5fa',
+                      borderColor: hasConflict ? '#ef4444' : (b.color || '#60a5fa'),
+                      left: columnCount > 1 ? `calc(4px + ${leftOffset}%)` : '4px',
+                      width: columnCount > 1 ? `calc(${columnWidth}% - 8px)` : 'calc(100% - 8px)',
+                      zIndex: isSelected ? 20 : 10,
+                    }}
+                    onMouseDown={(e) => {
+                      setSelectedBlock({ day: d.key, id: b.id });
+                      beginMove(d.key, b)(e);
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedBlock({ day: d.key, id: b.id });
+                    }}
+                    onDoubleClick={openEdit(d.key, b)}
+                  >
+                    {/* 충돌 경고 아이콘 */}
+                    {hasConflict && (
+                      <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] px-1 rounded-bl" title="시간 충돌">
+                        ⚠
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between px-2 py-1 bg-black/10">
+                      <span className="truncate">
+                        {b.academyName} {b.subject ? `• ${b.subject}` : ''}
+                      </span>
+                    </div>
+                    {height > 30 && (
+                      <div className="px-2 py-1 bg-black/5">
+                        <div>{minutesToLabel(b.startMin)} ~ {minutesToLabel(b.endMin)}</div>
+                      </div>
+                    )}
+                    {/* 리사이즈 핸들 */}
+                    <div
+                      className="absolute left-2 right-2 h-1 cursor-n-resize rounded-full bg-white/40 hover:bg-white/70 transition-colors"
+                      style={{ top: 0 }}
+                      onMouseDown={beginResize(d.key, b, 'top')}
+                    />
+                    <div
+                      className="absolute left-2 right-2 h-1 cursor-s-resize rounded-full bg-white/40 hover:bg-white/70 transition-colors"
+                      style={{ bottom: 0 }}
+                      onMouseDown={beginResize(d.key, b, 'bottom')}
+                    />
+                  </div>
+                );
+              });
+            })()}
           </div>
         ))}
       </div>
