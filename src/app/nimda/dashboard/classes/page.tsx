@@ -13,7 +13,7 @@ import {
 } from '@/dto';
 
 // 로컬 타입 (기존 types/class.ts 대체)
-type TabType = '수업 관리' | '수업 일지';
+type TabType = '수업 관리' | '수업 일지' | '수업 진도';
 
 interface ClassLecture {
   id: string;
@@ -88,13 +88,13 @@ export default function ClassesManagePage() {
   useEffect(() => {
     fetchClasses();
     fetchAllStudents();
-    if (activeTab === '수업 일지') {
+    if (activeTab === '수업 일지' || activeTab === '수업 진도') {
       fetchClassLogs();
     }
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === '수업 일지') {
+    if (activeTab === '수업 일지' || activeTab === '수업 진도') {
       fetchClassLogs();
     }
   }, [activeTab, selectedClassFilter]);
@@ -716,6 +716,16 @@ export default function ClassesManagePage() {
                   수업 일지
                 </button>
                 <button
+                  onClick={() => setActiveTab('수업 진도')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === '수업 진도'
+                      ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400'
+                      : 'border-transparent text-muted hover:text-body hover:border-default'
+                  }`}
+                >
+                  수업 진도
+                </button>
+                <button
                   onClick={() => setActiveTab('수업 관리')}
                   className={`py-4 px-1 border-b-2 font-medium text-sm ${
                     activeTab === '수업 관리'
@@ -810,7 +820,7 @@ export default function ClassesManagePage() {
                 ))}
               </div>
             )
-          ) : (
+          ) : activeTab === '수업 일지' ? (
             // 수업 일지 탭
             <div>
               {/* 필터 섹션 */}
@@ -851,6 +861,110 @@ export default function ClassesManagePage() {
                   onDateChange={setCalendarDate}
                 />
               )}
+            </div>
+          ) : (
+            // 수업 진도 탭
+            <div>
+              {/* 필터 섹션 */}
+              <div className="bg-card p-6 rounded-lg shadow-sm border border-default mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-body mb-2">
+                      수업 선택
+                    </label>
+                    <select
+                      value={selectedClassFilter}
+                      onChange={(e) => setSelectedClassFilter(e.target.value)}
+                      className="w-full px-3 py-2 border border-input bg-card text-title rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="">전체 수업</option>
+                      {classes.map((classLecture) => (
+                        <option key={classLecture.id} value={classLecture.id}>
+                          {classLecture.name} ({classLecture.subject}, {classLecture.grade}학년)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* 수업 진도 목록 */}
+              {logsLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                </div>
+              ) : (() => {
+                // 선택된 수업으로 필터링 후 날짜순 정렬 (최신순)
+                const filteredLogs = classLogs
+                  .filter(log => !selectedClassFilter || log.classLecture?.id === selectedClassFilter)
+                  .filter(log => log.content && log.content.trim().length > 0)
+                  .sort((a, b) => b.date.localeCompare(a.date));
+
+                if (filteredLogs.length === 0) {
+                  return (
+                    <div className="text-center py-12 bg-card rounded-lg shadow-sm border border-default">
+                      <svg className="w-16 h-16 text-muted mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <h3 className="text-lg font-medium text-title mb-2">수업 진도 기록이 없습니다</h3>
+                      <p className="text-body">수업 일지를 작성하면 이곳에 진도가 표시됩니다.</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {filteredLogs.map((log) => (
+                      <div
+                        key={log.id}
+                        className="bg-card rounded-lg shadow-sm border border-default overflow-hidden"
+                      >
+                        {/* 헤더 */}
+                        <div className="px-6 py-4 bg-muted/30 border-b border-default flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                              {log.date.substring(0, 10)}
+                            </span>
+                            <span className="text-sm text-muted">
+                              {new Date(log.date).toLocaleDateString('ko-KR', { weekday: 'short' })}
+                            </span>
+                            {log.classLecture && (
+                              <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs rounded-full">
+                                {log.classLecture.name}
+                              </span>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => handleCalendarLogClick(log.classLecture?.id || '', log.date.substring(0, 10), log)}
+                            className="text-sm text-indigo-600 hover:text-indigo-800 dark:text-indigo-400"
+                          >
+                            수정
+                          </button>
+                        </div>
+
+                        {/* 수업 내용 */}
+                        <div className="px-6 py-4">
+                          <h4 className="text-sm font-medium text-muted mb-2">수업 내용</h4>
+                          <p className="text-body whitespace-pre-wrap">{log.content}</p>
+                        </div>
+
+                        {/* 과제 (있는 경우만) */}
+                        {log.homework && log.homework.trim() && (
+                          <div className="px-6 py-4 border-t border-default bg-amber-50/50 dark:bg-amber-900/10">
+                            <h4 className="text-sm font-medium text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-1">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                              </svg>
+                              과제
+                            </h4>
+                            <p className="text-amber-900 dark:text-amber-200 whitespace-pre-wrap">{log.homework}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
 
