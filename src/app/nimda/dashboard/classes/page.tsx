@@ -380,6 +380,110 @@ export default function ClassesManagePage() {
     }
   };
 
+  // 요일 매핑 (스케줄 파싱용)
+  const DAY_MAP: Record<string, number> = {
+    '일': 0, '월': 1, '화': 2, '수': 3, '목': 4, '금': 5, '토': 6
+  };
+
+  // 수업 스케줄에서 요일 목록 추출
+  const getScheduleDays = (classId: string): number[] => {
+    const cls = classes.find(c => c.id === classId);
+    if (!cls?.schedule) return [];
+
+    try {
+      const schedule = typeof cls.schedule === 'string'
+        ? JSON.parse(cls.schedule)
+        : cls.schedule;
+      if (!Array.isArray(schedule)) return [];
+      return schedule.map(s => DAY_MAP[s.day]).filter(d => d !== undefined);
+    } catch {
+      return [];
+    }
+  };
+
+  // 이전 수업 날짜 찾기
+  const getPrevClassDate = (classId: string, currentDate: string): string | null => {
+    const cls = classes.find(c => c.id === classId);
+    if (!cls) return null;
+
+    const scheduleDays = getScheduleDays(classId);
+    if (scheduleDays.length === 0) return null;
+
+    const startDateStr = cls.startDate?.substring(0, 10);
+    let date = new Date(currentDate);
+
+    // 최대 60일 이전까지 탐색
+    for (let i = 0; i < 60; i++) {
+      date.setDate(date.getDate() - 1);
+      const dateStr = date.toISOString().split('T')[0];
+
+      // 개강일 이전이면 중단
+      if (startDateStr && dateStr < startDateStr) break;
+
+      // 해당 요일이 스케줄에 있으면 반환
+      if (scheduleDays.includes(date.getDay())) {
+        return dateStr;
+      }
+    }
+    return null;
+  };
+
+  // 다음 수업 날짜 찾기
+  const getNextClassDate = (classId: string, currentDate: string): string | null => {
+    const cls = classes.find(c => c.id === classId);
+    if (!cls) return null;
+
+    const scheduleDays = getScheduleDays(classId);
+    if (scheduleDays.length === 0) return null;
+
+    const endDateStr = cls.endDate?.substring(0, 10);
+    let date = new Date(currentDate);
+
+    // 최대 60일 이후까지 탐색
+    for (let i = 0; i < 60; i++) {
+      date.setDate(date.getDate() + 1);
+      const dateStr = date.toISOString().split('T')[0];
+
+      // 종강일 이후면 중단
+      if (endDateStr && dateStr > endDateStr) break;
+
+      // 해당 요일이 스케줄에 있으면 반환
+      if (scheduleDays.includes(date.getDay())) {
+        return dateStr;
+      }
+    }
+    return null;
+  };
+
+  // 특정 날짜의 로그로 이동
+  const navigateToLog = (classId: string, date: string) => {
+    const existingLog = classLogs.find(log =>
+      log.classLecture?.id === classId && log.date.substring(0, 10) === date
+    );
+
+    if (existingLog) {
+      // 기존 로그가 있으면 수정 모드
+      setEditingLog(existingLog);
+      setNewLog({
+        classLectureId: existingLog.classLecture.id,
+        date: existingLog.date.substring(0, 10),
+        content: existingLog.content,
+        homework: existingLog.homework || '',
+        notice: existingLog.notice || ''
+      });
+    } else {
+      // 기존 로그가 없으면 새로 생성 모드
+      setEditingLog(null);
+      setNewLog({
+        classLectureId: classId,
+        date: date,
+        content: '',
+        homework: '',
+        notice: ''
+      });
+    }
+  };
+
   const handleUpdateLog = async () => {
     if (!editingLog) return;
     
@@ -1030,23 +1134,66 @@ export default function ClassesManagePage() {
           )}
 
           {/* 수업 일지 추가/수정 모달 - 간단한 버전 */}
-          {showLogModal && (
+          {showLogModal && (() => {
+            const prevDate = newLog.classLectureId ? getPrevClassDate(newLog.classLectureId, newLog.date) : null;
+            const nextDate = newLog.classLectureId ? getNextClassDate(newLog.classLectureId, newLog.date) : null;
+            const currentClass = classes.find(c => c.id === newLog.classLectureId);
+
+            return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <div className="bg-card rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-title">
-                    {editingLog ? '수업 일지 수정' : '수업 일지 추가'}
-                  </h2>
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-xl font-bold text-title">
+                      {editingLog ? '수업 일지 수정' : '수업 일지 추가'}
+                    </h2>
+                    {currentClass && newLog.date && (
+                      <span className="text-sm text-muted">
+                        ({currentClass.name} · {newLog.date})
+                      </span>
+                    )}
+                  </div>
                   <button
                     onClick={() => {
                       setShowLogModal(false);
                       resetLogForm();
                     }}
-                    className="text-muted hover:text-body"
+                    className="text-muted hover:text-body text-2xl leading-none"
                   >
                     ×
                   </button>
                 </div>
+
+                {/* 이전/다음 네비게이션 */}
+                {newLog.classLectureId && (
+                  <div className="flex items-center justify-between mb-4 py-2 px-3 bg-muted/30 rounded-lg">
+                    <button
+                      onClick={() => prevDate && navigateToLog(newLog.classLectureId, prevDate)}
+                      disabled={!prevDate}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                      <span>이전 수업</span>
+                      {prevDate && <span className="text-xs text-muted">({prevDate})</span>}
+                    </button>
+                    <span className="text-sm text-muted">
+                      {editingLog ? '기록됨' : '미기록'}
+                    </span>
+                    <button
+                      onClick={() => nextDate && navigateToLog(newLog.classLectureId, nextDate)}
+                      disabled={!nextDate}
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted"
+                    >
+                      <span>다음 수업</span>
+                      {nextDate && <span className="text-xs text-muted">({nextDate})</span>}
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-body mb-2">
@@ -1121,8 +1268,8 @@ export default function ClassesManagePage() {
                   <button
                     onClick={editingLog ? handleUpdateLog : handleAddLog}
                     disabled={
-                      !newLog.classLectureId || 
-                      !newLog.date || 
+                      !newLog.classLectureId ||
+                      !newLog.date ||
                       !newLog.content
                     }
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
@@ -1132,7 +1279,8 @@ export default function ClassesManagePage() {
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
       </div>
     </AdminLayout>

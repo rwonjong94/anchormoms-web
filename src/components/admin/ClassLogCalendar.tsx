@@ -178,6 +178,8 @@ export default function ClassLogCalendar({
       });
 
       if (entries.length > 0) {
+        // 시간 순으로 정렬
+        entries.sort((a, b) => a.scheduleEntry.start.localeCompare(b.scheduleEntry.start));
         map.set(dateStr, entries);
       }
     });
